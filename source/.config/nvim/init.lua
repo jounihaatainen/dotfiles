@@ -5,9 +5,6 @@
 -- /\__/ / | | |
 -- \____/\_| |_/
 --
--- My pretty basic NeoVim configuration
+-- My "pretty basic" NeoVim configuration
 
-require('keybindings')
-require('plugins')
-require('plugin_configs')
-require('settings')
+require('plugins').setup()
