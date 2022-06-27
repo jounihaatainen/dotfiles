@@ -270,6 +270,12 @@ function M.setup()
       end,
     }
 
+    -- Razor syntax highlighting
+    use {
+      "jlcrochet/vim-razor",
+      event = "BufReadPre",
+    }
+
     if packer_bootstrap then
       print "Restarting Neovim required after installation!"
       require("packer").sync()

@@ -44,7 +44,7 @@ local function keymappings(client, bufnr)
     t = { "<cmd>lua require('telescope.builtin').lsp_type_definitions()<cr>", "Type Definitions" },
     l = { "<cmd>lua require('telescope.builtin').treesitter()<cr>", "List Functions and Variables" },
     s = { "<cmd>lua require('telescope.builtin').lsp_document_symbols()<cr>", "Document Symbols" },
-    S = { "<cmd>lua require('telescope.builtin').lsp_workspace_symbols()<cr>", "Document Symbols" },
+    S = { "<cmd>lua require('telescope.builtin').lsp_workspace_symbols()<cr>", "Workspace Symbols" },
     e = { "<cmd>lua require('telescope.builtin').diagnostics()<cr>", "Diagnostics" },
     -- d = { "<Cmd>lua vim.lsp.buf.definition()<CR>", "Definition" },
     D = { "<Cmd>lua vim.lsp.buf.declaration()<CR>", "Declaration" },
