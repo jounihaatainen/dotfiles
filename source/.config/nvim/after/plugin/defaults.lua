@@ -2,7 +2,7 @@ local api = vim.api
 local g = vim.g
 local opt = vim.opt
 
-api.nvim_set_keymap("", "<Space", "<Nop>", { noremap = true, silent = true })
+api.nvim_set_keymap("", "<Space>", "<Nop>", { noremap = true, silent = true })
 g.mapleader = ' '
 g.maplocalleader = ' '
 
@@ -13,7 +13,7 @@ opt.shiftround = true
 opt.shiftwidth = 4
 opt.softtabstop = -1
 opt.tabstop = 8
-opt.textwidth = 80
+-- opt.textwidth = 80
 opt.title = true
 opt.splitbelow = true
 opt.splitright = true
