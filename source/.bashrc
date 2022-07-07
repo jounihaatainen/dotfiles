@@ -13,10 +13,7 @@ __prompt_command() {
     local SYMBOL='❱'
     [[ $EUID -eq 0 ]] && SYMBOL='#'
 
-    # [[ $? -eq 0 ]] \
-    #     && USER_PROMPT="\[${GREEN}\]${SYMBOL}\[${NOCOLOR}\]" \
-    #     || USER_PROMPT="\[${RED}\]$? ${SYMBOL}\[${NOCOLOR}\]"
-    if [ $RETURN -eq 0 ]
+   if [ $RETURN -eq 0 ]
     then
         USER_PROMPT="\[${GREEN}\]${SYMBOL}\[${NOCOLOR}\]"
     else
