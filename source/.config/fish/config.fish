@@ -1,4 +1,4 @@
-# Environment varaibles
+# Environment variables
 if status is-login
     # Default editor
     set --export EDITOR (which nvim)
