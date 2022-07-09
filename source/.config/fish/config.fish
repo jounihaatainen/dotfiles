@@ -44,7 +44,7 @@ if status is-interactive
     if type -q exa
         abbr ls 'exa'
         abbr ll 'exa -l -g --icons'
-        abbr lla 'll -a'
+        abbr lla 'exa -a -l -g --icons'
     else
         abbr ls 'ls --color=auto'
         abbr ll 'ls --color=auto -l'
