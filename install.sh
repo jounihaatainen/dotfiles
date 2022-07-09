@@ -60,57 +60,56 @@ find "${HOME}" -maxdepth 1 -xtype l -print
 
 
 # Install packages
-function apt_install_packages {
-    echo "Install packages for Linux"
-    
-    ## Add repositories
-    echo "--- Add repositories"
-    sudo apt -y install software-properties-common
-    sudo add-apt-repository -y ppa:fish-shell/release-3
-    sudo add-apt-repository -y ppa:neovim-ppa/unstable
+BREW_PACKAGES="fish nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq httpie"
+BREW_LSP_SERVER_SUPPORT_PACKAGES="cmake llvm node"
+APT_LSP_SERVER_SUPPORT_PACKAGES="zlib1g-dev"
 
-    ## Update and upgrade packages
-    echo "--- Update and upgrade packages"
-    sudo apt update && sudo apt -y upgrade
-
-    ## Install packages
-    echo "--- Install packages"
-    sudo apt -y install build-essential fish neovim tmux fzf fd-find ripgrep bat exa jq httpie cmake clang llvm nodejs npm unzip
-    # TODO: How to install these: git-delta glow slides lf ???
-
-    ## Remove unnecessary packages
-    echo "--- Auto remove unnecessary packages"
-    sudo apt -y autoremove
-}
-
-function brew_install_packages {
-    echo "Install packages for MacOS"
-
-    ## Install Homebrew if not installed
+function brew_install_self_if_not_in_path {
     if ! command -v brew &> /dev/null
     then
         echo "Install Homebrew"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
+}
+
+function brew_install_packages_linux {
+    echo "Install packages with Homebrew on Linux"
+
+    ## Install Homebrew's dependencies
+    sudo apt-get install build-essential
+
+    ## Ensure that libz is available for language servers (mainly ccls)
+    sudo apt install $APT_LSP_SERVER_SUPPORT_PACKAGES
+
+    ## Install Homebrew if not installed
+    brew_install_self_if_not_in_path
+    
+    test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
+    test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+    ## Install command line tools
+    brew install gcc $BREW_PACKAGES $BREW_LSP_SERVER_SUPPORT_PACKAGES
+}
+
+function brew_install_packages_macos {
+    echo "Install packages with Homebrew on MacOS"
+
+    ## Install Homebrew if not installed
+    brew_install_self_if_not_in_path
 
     ## Install wezterm
     brew tap wez/wezterm
     brew install --cask wez/wezterm/wezterm
 
     ## Install command line tools
-    brew install fish nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq httpie
-    #brew install jrnl
-    #brew install gh
-    
-    ## Install dependencies for LSP servers
-    brew install cmake llvm node
+    brew install $BREW_PACKAGES $BREW_LSP_SERVER_SUPPORT_PACKAGES
 }
 
 echo "---"
 
 case "$df_os" in
-    Linux*) apt_install_packages ;;
-    Darwin*) brew_install_packages ;;
+    Linux*) brew_install_packages_linux ;;
+    Darwin*) brew_install_packages_macos ;;
     *) echo "Don't know what to install for $df_os" ;;
 esac
 

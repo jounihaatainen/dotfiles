@@ -38,8 +38,15 @@ PROMPT_COMMAND=__prompt_command
 PS4='-[\e[33m${BASH_SOURCE/.sh}\e[0m: \e[32m${LINENO}\e[0m] '
 PS4+='${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 
-# Aliases
+## Homebrew
+test -d $HOME/.linuxbrew && eval "$($HOME/.linuxbrew/bin/brew shellenv)"
+test -d /home/linuxbrew/.linuxbrew && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+test -x /opt/homebrew/bin/brew && eval "$(/opt/homebrew/bin/brew shellenv)"
+
+## Aliases
 if command -v exa &> /dev/null
 then
     alias ls=exa
+else
+    alias ls=ls --color
 fi

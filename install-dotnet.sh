@@ -5,27 +5,23 @@ set -e
 df_os="$(uname -s)"
 
 function apt_install_packages {
-    echo "Install dotnet packages for Linux"
+    echo "Install dotnet packages with apt on Linux"
 
     ## Add repository
-    echo "--- Add repository"
     wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
     rm packages-microsoft-prod.deb
 
-    ## Update and upgrade packages
-    echo "--- Update packages"
-    sudo apt update
-
-    ## Install packages
-    echo "--- Install packages"
-    sudo apt-get install -y apt-transport-https && \
-        sudo apt-get update && \
-        sudo apt-get install -y dotnet-sdk-6.0
+    ## Install dotnet-sdk
+    echo "--- Install dotnet-sdk"
+    sudo apt update; \
+        sudo apt install -y apt-transport-https && \
+        sudo apt update && \
+        sudo apt install -y dotnet-sdk-6.0
 }
 
 function brew_install_packages {
-    echo "Install dotnet packages for MacOS"
+    echo "Install dotnet packages with homebrew on MacOS"
 
     ## Install Homebrew if not installed
     if ! command -v brew &> /dev/null
