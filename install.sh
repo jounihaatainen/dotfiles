@@ -12,26 +12,23 @@ echo "Dotfiles in '${df_dir}'"
 echo "Dotfiles source in '${df_src_dir}'"
 echo "Backup directory in '${df_bak_dir}'"
 
-# Create needed directories
+# Backup existing regular files to backup folder before creating symlinks
 cat << EOF
 ---
-Creating needed directories
+Backing up already existing regular files
 EOF
 cd "${df_src_dir}"
-find . -type d -print | cut -c3- | xargs -I {} echo "mkdir -p \"${HOME}/{}\""
-find . -type d -print | cut -c3- | xargs -I {} mkdir -p "${HOME}/{}"
+for f in $(find . -type f -xtype f -print | cut -c3-)
+do
+    if [ -f "${HOME}/$f" ] && [ ! -L "${HOME}/$f" ]
+    then
+	d=$(dirname "${df_bak_dir}/$f")
+	[ ! -d "$d" ] && echo "Creating backup dir $d" && mkdir -p "$d"
+        echo "Backing up \"${HOME}/$f\" to \"${df_bak_dir}/$f\""
+	cp "${HOME}/$f" "${df_bak_dir}/$f"
+    fi
+done
 cd - > /dev/null
-
-# Backup existing regular files to backup folder before creating symlinks
-#cat << EOF
-#---
-#Backing up already existing regular files
-#EOF
-#mkdir -p "${df_bak_dir}"
-#cd "${df_src_dir}"
-#find . -type f -print | cut -c3- | xargs -I {} [ -f "${HOME}/{}" ] && ! [ -L "${HOME}/{}" ] && echo "mv \"${HOME}/{}\" \"${df_bak_dir}/{}\""
-#find . -type f -print | cut -c3- | xargs -I {} [ -f "${HOME}/{}" ] && ! [ -L "${HOME}/{}" ] && mv "${HOME}/{}" "${df_bak_dir}/{}"
-#cd - > /dev/null
 
 # Create symlinks
 cat << EOF
@@ -39,25 +36,27 @@ cat << EOF
 Creating symlinks
 EOF
 cd "${df_src_dir}"
-find . -type f -print | cut -c3- | xargs -I {} echo "ln -fs \"${df_src_dir}/{}\" \"${HOME}/{}\""
-find . -type f -print | cut -c3- | xargs -I {} ln -fs "${df_src_dir}/{}" "${HOME}/{}"
+for f in $(find . -type f -print | cut -c3-)
+do
+    d=$(dirname "${HOME}/$f")
+    [ ! -d "$d" ] && echo "Creating dir $d" && mkdir -p "$d"
+    echo "Creating link \"${HOME}/$f\" -> \"${df_src_dir}/$f\""
+    ln -fs "${df_src_dir}/$f" "${HOME}/$f"
+done
 cd - > /dev/null
 
 # Remove dead symlinks
 cat << EOF
 ---
-Prune dead symlinks
+Finding dead symlinks (please remove following dead symlinks)
 EOF
 find "${HOME}" -maxdepth 1 -xtype l -print
 [ -d "${HOME}/.config" ] && find "${HOME}/.config" -xtype l -print
-find "${HOME}" -xtype l -delete
-[ -d "${HOME}/.config" ] && find "${HOME}/.config" -xtype l -delete
+# find "${HOME}" -xtype l -delete
+# [ -d "${HOME}/.config" ] && find "${HOME}/.config" -xtype l -delete
+# 
 
 cat << EOF
 ---
 All done
 EOF
-
-# Install packer for nvim
-# XXX: nvim could do this by itself...
-#git clone --depth 1 https://github.com/wbthomason/packer.nvim ~/.local/share/nvim/site/pack/packer/start/packer.nvim
