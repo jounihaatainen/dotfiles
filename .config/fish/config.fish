@@ -47,7 +47,7 @@ if status is-login
 end
 
 
-# Abbreviations
+# Abbreviations & aliases
 if status is-interactive
     if type -q exa
         abbr ls 'exa'
@@ -58,6 +58,8 @@ if status is-interactive
         abbr ll 'ls --color=auto -l'
         abbr lla 'll -a'
     end
+
+    abbr dotfiles '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 end
 
 # Start ssh-agent if it is not running

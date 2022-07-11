@@ -13,6 +13,8 @@ else
     alias ls=ls --color
 fi
 
+alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+
 ## Prompt
 if command -v starship &> /dev/null
 then
