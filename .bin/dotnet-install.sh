@@ -2,8 +2,6 @@
 
 set -e
 
-df_os="$(uname -s)"
-
 function apt_install_packages {
     echo "Install dotnet packages with apt on Linux"
 
@@ -35,17 +33,16 @@ function brew_install_packages {
     brew install --cask dotnet-sdk
 }
 
-echo "---"
+DOTFILE_OS="$(uname -s)"
 
-case "$df_os" in
+case "$DOTFILE_OS" in
     Linux*) apt_install_packages ;;
     Darwin*) brew_install_packages ;;
-    *) echo "Don't know what to install for $df_os" ;;
+    *) echo "Don't know what to install for ${DOTFILE_OS}. Abort, abort, abort!" ;;
 esac
 
 
 # All done
 cat << EOF
----
 All done
 EOF
