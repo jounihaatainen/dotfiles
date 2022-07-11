@@ -1,0 +1,19 @@
+# This is Git's per-user configuration file.
+[user]
+    name = Jouni Haatainen
+    email = jouni.haatainen@gmail.com
+
+[core]
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
