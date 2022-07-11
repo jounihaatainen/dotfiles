@@ -30,7 +30,7 @@ if status is-login
 
     # Java
     if test -x /usr/libexec/java_home
-        eval (/usr/libexec/java_home)
+        fish_add_path (/usr/libexec/java_home)
     end
 
     # Android
