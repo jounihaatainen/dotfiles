@@ -68,3 +68,5 @@ if status is-interactive
         set --export SSH_AGENT_PID $SSH_AGENT_PID
     end
 end
+
+starship init fish | source

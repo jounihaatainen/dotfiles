@@ -60,7 +60,7 @@ find "${HOME}" -maxdepth 1 -xtype l -print
 
 
 # Install packages
-BREW_PACKAGES="fish nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq httpie"
+BREW_PACKAGES="fish starship nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq httpie"
 BREW_LSP_SERVER_SUPPORT_PACKAGES="cmake llvm node"
 APT_LSP_SERVER_SUPPORT_PACKAGES="zlib1g-dev"
 
