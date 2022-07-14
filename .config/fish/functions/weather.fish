@@ -1,7 +1,7 @@
 function weather --description 'Weather for city (default city is Pori)'
-    set -l city = $argv[1]
+    set -l city $argv[1]
     if test -z "$city"
-        set city = "Pori"
+        set city "Pori"
     end
-    curl -s wttr.in/$city | grep -v Follow
+    curl -s "https://wttr.in/$city" | grep -v Follow
 end
