@@ -43,6 +43,7 @@ if status is-login
     fish_add_path ~/.dotnet/tools
 
     # Other
+    fish_add_path ~/.local/bin
     fish_add_path ~/Google\ Drive/bin
 end
 
