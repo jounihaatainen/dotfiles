@@ -37,7 +37,8 @@ local function lsp_progress(_, is_active)
   local spinners = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
   local ms = vim.loop.hrtime() / 1000000
   local frame = math.floor(ms / 120) % #spinners
-  return table.concat(status, "  ") .. " " .. spinners[frame + 1]
+  --return table.concat(status, "  ") .. " " .. spinners[frame + 1]
+  return table.concat(status, " | ") .. " " .. spinners[frame + 1]
 end
 
 function M.setup()
@@ -51,8 +52,10 @@ function M.setup()
         options = {
             icons_enabled = true,
             theme = 'darcula',
-            component_separators = { left = '', right = ''},
-            section_separators = { left = '', right = ''},
+            --component_separators = { left = '', right = ''},
+            --section_separators = { left = '', right = ''},
+            component_separators = { left = '|', right = '|'},
+            section_separators = { left = '', right = ''},
             disabled_filetypes = {},
             always_divide_middle = true,
             globalstatus = false,
