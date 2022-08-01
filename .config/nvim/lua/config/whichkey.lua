@@ -26,7 +26,6 @@ function M.setup()
   local mappings = {
     ["w"] = { "<cmd>update!<CR>", "Save" },
     ["q"] = { "<cmd>q!<CR>", "Quit" },
-    ["n"] = { "<cmd>NvimTreeToggle<CR>", "Toggle NvimTree" },
 
     b = {
       name = "Buffer",
@@ -51,7 +50,6 @@ function M.setup()
       C = { "<cmd>FzfLua commands<cr>", "Commands (FZF)" },
       r = { "<cmd>Telescope file_browser<cr>", "Browser" },
       w = { "<cmd>Telescope current_buffer_fuzzy_find<cr>", "Current Buffer" },
-      e = { "<cmd>NvimTreeToggle<cr>", "Explorer" },
     },
 
     p = {
