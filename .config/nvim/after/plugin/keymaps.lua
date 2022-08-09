@@ -3,8 +3,8 @@ local default_opts = { noremap = true, silent = true }
 local expr_opts = { noremap = true, expr = true, silent = true }
 
 -- Better escape using jj or jk in insert and terminal mode
-keymap("i", "jj", "<ESC>", default_opts)
-keymap("t", "jj", "<ESC>", default_opts)
+keymap("i", "kj", "<ESC>", default_opts)
+keymap("t", "kj", "<ESC>", default_opts)
 
 -- Center search results
 keymap("n", "n", "nzz", default_opts)
@@ -15,8 +15,8 @@ keymap("n", "k", "v:count == 0 ? 'gk' : 'k'", expr_opts)
 keymap("n", "j", "v:count == 0 ? 'gj' : 'j'", expr_opts)
 
 -- Better indent
-keymap("v", "<", "<gv", default_opts)
-keymap("v", ">", ">gv", default_opts)
+-- keymap("v", "<", "<gv", default_opts)
+-- keymap("v", ">", ">gv", default_opts)
 
 -- Paste over currently selected text without yanking it
 keymap("v", "p", '"_dP', default_opts)
