@@ -6,6 +6,18 @@ function M.setup()
 
   telescope.setup {
     defaults = {
+      layout_strategy = 'flex',
+      layout_config = {
+        vertical = {
+          preview_cutoff = 30,
+        },
+        flex = {
+          flip_columns = 140,
+          vertical = {
+            preview_cutoff = 30,
+          },
+        },
+      },
       mappings = {
         i = {
           ["<C-j>"] = actions.move_selection_next,

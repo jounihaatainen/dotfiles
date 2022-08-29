@@ -46,6 +46,7 @@ function M.setup()
       O = { "<cmd>FzfLua oldfiles<cr>", "Old Files (FZF)" },
       g = { "<cmd>lua require('telescope.builtin').live_grep()<cr>", "Live Grep" },
       G = { "<cmd>FzfLua live_grep<cr>", "Live Grep" },
+      s = { "<cmd>lua require('telescope.builtin').grep_string()<cr>", "Search Word" },
       c = { "<cmd>lua require('telescope.builtin').commands()<cr>", "Commands" },
       C = { "<cmd>FzfLua commands<cr>", "Commands (FZF)" },
       r = { "<cmd>Telescope file_browser<cr>", "Browser" },

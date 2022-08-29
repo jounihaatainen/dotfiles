@@ -16,13 +16,15 @@ local function keymappings(client, bufnr)
   keymap("n", "]e", "<cmd>lua vim.diagnostic.goto_next({severity = vim.diagnostic.severity.ERROR})<CR>", opts)
 
   -- Whichkey
-  local keymap_l = {
+  local keymap = {
     l = {
       name = "Code",
       r = { "<cmd>lua vim.lsp.buf.rename()<CR>", "Rename" },
       a = { "<cmd>lua vim.lsp.buf.code_action()<CR>", "Code Action" },
-      d = { "<cmd>lua vim.diagnostic.open_float()<CR>", "Line Diagnostics" },
+      d = { "<cmd>Telescope diagnostic<CR>", "Diagnostics" },
+      l = { "<cmd>lua vim.diagnostic.open_float()<CR>", "Line Diagnostics" },
       i = { "<cmd>LspInfo<CR>", "Lsp Info" },
+      s = { "<cmd>SymbolsOutline<CR>", "Toggle Symbols Outline" },
       w = {
         name = "Workspace",
         a = { "<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>", "Add Folder to Workspace" },
@@ -30,33 +32,30 @@ local function keymappings(client, bufnr)
         l = { "<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>", "List Workspace Folders" },
       }
     },
+    g = {
+      name = "Goto",
+      d = { "<cmd>lua require('telescope.builtin').lsp_definitions()<cr>", "Definitions" },
+      i = { "<cmd>lua require('telescope.builtin').lsp_implementations()<cr>", "Implementations" },
+      r = { "<cmd>lua require('telescope.builtin').lsp_references()<cr>", "References" },
+      t = { "<cmd>lua require('telescope.builtin').lsp_type_definitions()<cr>", "Type Definitions" },
+      l = { "<cmd>lua require('telescope.builtin').treesitter()<cr>", "List Functions and Variables" },
+      s = { "<cmd>lua require('telescope.builtin').lsp_document_symbols()<cr>", "Document Symbols" },
+      S = { "<cmd>lua require('telescope.builtin').lsp_workspace_symbols()<cr>", "Workspace Symbols" },
+      e = { "<cmd>lua require('telescope.builtin').diagnostics()<cr>", "Diagnostics" },
+      -- d = { "<Cmd>lua vim.lsp.buf.definition()<CR>", "Definition" },
+      D = { "<Cmd>lua vim.lsp.buf.declaration()<CR>", "Declaration" },
+      -- s = { "<cmd>lua vim.lsp.buf.signature_help()<CR>", "Signature Help" },
+      -- I = { "<cmd>lua vim.lsp.buf.implementation()<CR>", "Goto Implementation" },
+      -- t = { "<cmd>lua vim.lsp.buf.type_definition()<CR>", "Goto Type Definition" },
+      -- r = { "<cmd>lua vim.lsp.buf.references()<CR>" , "Go to References" },
+    },
   }
 
   if client.resolved_capabilities.document_formatting then
-    keymap_l.l.f = { "<cmd>lua vim.lsp.buf.formatting()<CR>", "Format Document" }
+    keymap.l.f = { "<cmd>lua vim.lsp.buf.formatting()<CR>", "Format Document" }
   end
 
-  local keymap_g = {
-    name = "Goto",
-    d = { "<cmd>lua require('telescope.builtin').lsp_definitions()<cr>", "Definitions" },
-    i = { "<cmd>lua require('telescope.builtin').lsp_implementations()<cr>", "Implementations" },
-    r = { "<cmd>lua require('telescope.builtin').lsp_references()<cr>", "References" },
-    t = { "<cmd>lua require('telescope.builtin').lsp_type_definitions()<cr>", "Type Definitions" },
-    l = { "<cmd>lua require('telescope.builtin').treesitter()<cr>", "List Functions and Variables" },
-    s = { "<cmd>lua require('telescope.builtin').lsp_document_symbols()<cr>", "Document Symbols" },
-    S = { "<cmd>lua require('telescope.builtin').lsp_workspace_symbols()<cr>", "Workspace Symbols" },
-    e = { "<cmd>lua require('telescope.builtin').diagnostics()<cr>", "Diagnostics" },
-    -- d = { "<Cmd>lua vim.lsp.buf.definition()<CR>", "Definition" },
-    D = { "<Cmd>lua vim.lsp.buf.declaration()<CR>", "Declaration" },
-    -- s = { "<cmd>lua vim.lsp.buf.signature_help()<CR>", "Signature Help" },
-    -- I = { "<cmd>lua vim.lsp.buf.implementation()<CR>", "Goto Implementation" },
-    -- t = { "<cmd>lua vim.lsp.buf.type_definition()<CR>", "Goto Type Definition" },
-    -- r = { "<cmd>lua vim.lsp.buf.references()<CR>" , "Go to References" },
-  }
-
-
-  whichkey.register(keymap_l, { buffer = bufnr, prefix = "<leader>" })
-  whichkey.register(keymap_g, { buffer = bufnr, prefix = "g" })
+  whichkey.register(keymap, { buffer = bufnr, prefix = "<leader>" })
 end
 
 function M.setup(client, bufnr)
