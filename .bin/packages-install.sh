@@ -45,6 +45,9 @@ function install_packages_macos {
     brew tap wez/wezterm
     brew install --cask wez/wezterm/wezterm
 
+    ## Install Hammerspoon
+    brew install --cask hammerspoon
+
     ## Install command line tools
     brew install $BREW_PACKAGES $BREW_LSP_SERVER_SUPPORT_PACKAGES
 }
