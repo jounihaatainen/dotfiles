@@ -1,37 +1,69 @@
-local hyper = {"cmd", "alt", "ctrl", "shift"}
-
 -- Load & start Spoons
-hs.loadSpoon("HoldToQuit")
-spoon.HoldToQuit:start()
+local holdToQuit = hs.loadSpoon("HoldToQuit")
+holdToQuit.duration = 1.5
+holdToQuit:start()
 
--- App activation
-local function openApp(name)
-  local app = hs.application.get(name)
-  if app then
-    if app:isFrontmost() then
-      app:hide()
+-- Keybindings
+local bind = hs.hotkey.bind
+local hyper = { "cmd", "alt", "ctrl", "shift" }
+local meh = { "cmd", "alt", "ctrl" }
+
+local appShortcuts = {
+  { mods=hyper, key='f', app="Finder" },
+  { mods=hyper, key='w', app="Safari" },
+  { mods=hyper, key='c', app="Google Chrome" },
+  { mods=hyper, key='t', app="WezTerm" },
+  { mods=hyper, key='o', app="Microsoft Outlook" },
+  { mods=hyper, key='s', app="Slack" },
+  { mods=hyper, key='e', app="Microsoft Excel" },
+  { mods=hyper, key='i', app="Inkscape" },
+  { mods=hyper, key='g', app="GitHub Desktop" },
+  { mods=hyper, key='m', app="Spotify" },
+  { mods=hyper, key='p', app="Preview" },
+  { mods=hyper, key='v', app="Vial" },
+}
+
+hs.fnutils.each(appShortcuts, function(entry)
+  bind(entry.mods, entry.key, function()
+    local app = hs.application.get(entry.app)
+    if app then
+      if app:isFrontmost() then
+        app:hide()
+      else
+        app:mainWindow():focus()
+      end
     else
-      app:mainWindow():focus()
+      hs.application.launchOrFocus(entry.app)
     end
-  else
-    hs.application.launchOrFocus(name)
-  end
-end
+  end)
+end)
 
-local function activateAppFunc(name)
-  return function ()
-    openApp(name)
-  end
-end
+local grid = {
+  { key='j', unit=hs.geometry.rect(0, 0.5, 1, 0.5) },
+  { key='k', unit=hs.geometry.rect(0, 0, 1, 0.5) },
+  { key='h', unit=hs.layout.left50 },
+  { key='l', unit=hs.layout.right50 },
+  { key='y', unit=hs.geometry.rect(0, 0, 0.5, 0.5) },
+  { key='u', unit=hs.geometry.rect(0.5, 0, 0.5, 0.5) },
+  { key='b', unit=hs.geometry.rect(0, 0.5, 0.5, 0.5) },
+  { key='n', unit=hs.geometry.rect(0.5, 0.5, 0.5, 0.5) },
+  { key='r', unit=hs.layout.left70 },
+  { key='t', unit=hs.layout.right30 },
+  { key='return', unit=hs.layout.maximized },
+  { key='space', unit=hs.geometry(0.15, 0.1, 0.7, 0.8) },
+}
 
-hs.hotkey.bind(hyper, 'f', activateAppFunc("Finder"))
-hs.hotkey.bind(hyper, 'w', activateAppFunc("Safari"))
-hs.hotkey.bind(hyper, 'c', activateAppFunc("Google Chrome"))
-hs.hotkey.bind(hyper, 't', activateAppFunc("WezTerm"))
-hs.hotkey.bind(hyper, 'o', activateAppFunc("Microsoft Outlook"))
-hs.hotkey.bind(hyper, 's', activateAppFunc("Slack"))
-hs.hotkey.bind(hyper, 'e', activateAppFunc("Microsoft Excel"))
-hs.hotkey.bind(hyper, 'i', activateAppFunc("Inkscape"))
-hs.hotkey.bind(hyper, 'g', activateAppFunc("GitHub Desktop"))
-hs.hotkey.bind(hyper, 'm', activateAppFunc("Spotify"))
-hs.hotkey.bind(hyper, 'p', activateAppFunc("Preview"))
+local m = hs.hotkey.modal.new(hyper, 'u')
+
+hs.fnutils.each(grid, function(entry)
+  m:bind('', entry.key, function()
+    hs.window.focusedWindow():moveToUnit(entry.unit)
+  end)
+  m:bind('shift', entry.key, function()
+    hs.window.focusedWindow():moveToUnit(entry.unit)
+      :moveToScreen(hs.window.focusedWindow():screen():next())
+  end)
+  m:bind('', 'escape', function() m:exit() end)
+  m:bind('ctrl', 'c', function() m:exit() end)
+end)
+
