@@ -21,6 +21,8 @@ local appShortcuts = {
   { mods=hyper, key='m', app="Spotify" },
   { mods=hyper, key='p', app="Preview" },
   { mods=hyper, key='v', app="Vial" },
+  { mods=hyper, key='d', app="Docker Desktop" },
+  { mods=hyper, key='a', app="Azure Data Studio" }
 }
 
 hs.fnutils.each(appShortcuts, function(entry)
@@ -58,10 +60,12 @@ local m = hs.hotkey.modal.new(hyper, 'u')
 hs.fnutils.each(grid, function(entry)
   m:bind('', entry.key, function()
     hs.window.focusedWindow():moveToUnit(entry.unit)
+    m:exit()
   end)
   m:bind('shift', entry.key, function()
     hs.window.focusedWindow():moveToUnit(entry.unit)
       :moveToScreen(hs.window.focusedWindow():screen():next())
+    m:exit()
   end)
   m:bind('', 'escape', function() m:exit() end)
   m:bind('ctrl', 'c', function() m:exit() end)
