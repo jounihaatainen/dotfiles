@@ -54,6 +54,7 @@ if status is-interactive
         abbr ls 'exa'
         abbr ll 'exa -l -g --icons'
         abbr lla 'exa -a -l -g --icons'
+        abbr tree 'exa --tree'
     else
         abbr ls 'ls --color=auto'
         abbr ll 'ls --color=auto -l'
