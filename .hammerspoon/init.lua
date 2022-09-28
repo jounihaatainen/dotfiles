@@ -22,7 +22,8 @@ local appShortcuts = {
   { mods=hyper, key='p', app="Preview" },
   { mods=hyper, key='v', app="Vial" },
   { mods=hyper, key='d', app="Docker Desktop" },
-  { mods=hyper, key='a', app="Azure Data Studio" }
+  { mods=hyper, key='a', app="Azure Data Studio" },
+  { mods=hyper, key='x', app="Xcode" }
 }
 
 hs.fnutils.each(appShortcuts, function(entry)
