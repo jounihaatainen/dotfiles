@@ -16,7 +16,7 @@ local function keymappings(client, bufnr)
   keymap("n", "]e", "<cmd>lua vim.diagnostic.goto_next({severity = vim.diagnostic.severity.ERROR})<CR>", opts)
 
   -- Whichkey
-  local keymap = {
+  local keymapping = {
     l = {
       name = "Code",
       r = { "<cmd>lua vim.lsp.buf.rename()<CR>", "Rename" },
@@ -52,10 +52,10 @@ local function keymappings(client, bufnr)
   }
 
   if client.resolved_capabilities.document_formatting then
-    keymap.l.f = { "<cmd>lua vim.lsp.buf.formatting()<CR>", "Format Document" }
+    keymapping.l.f = { "<cmd>lua vim.lsp.buf.formatting()<CR>", "Format Document" }
   end
 
-  whichkey.register(keymap, { buffer = bufnr, prefix = "<leader>" })
+  whichkey.register(keymapping, { buffer = bufnr, prefix = "<leader>" })
 end
 
 function M.setup(client, bufnr)

@@ -27,6 +27,7 @@ opt.signcolumn = 'yes'
 opt.mouse = 'a'
 opt.updatetime = 250
 opt.timeoutlen = 300
+opt.swapfile = false
 -- opt.foldmethod = "expr"
 -- opt.foldexpr = "nvim_treesitter#foldexpr()"
 -- opt.foldenable = false
