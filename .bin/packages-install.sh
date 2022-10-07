@@ -48,6 +48,15 @@ function install_packages_macos {
     ## Install Hammerspoon
     brew install --cask hammerspoon
 
+    ## Install qutebrowser
+    brew install --cask qutebrowser
+
+    ## Install Docker Desktop
+    brew install --cask docker
+
+    ## Install Vial
+    brew install --cask vial
+
     ## Install command line tools
     brew install $BREW_PACKAGES $BREW_LSP_SERVER_SUPPORT_PACKAGES
 }
