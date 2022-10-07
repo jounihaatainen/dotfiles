@@ -23,7 +23,8 @@ local appShortcuts = {
   { mods=hyper, key='v', app="Vial" },
   { mods=hyper, key='d', app="Docker Desktop" },
   { mods=hyper, key='a', app="Azure Data Studio" },
-  { mods=hyper, key='x', app="Xcode" }
+  { mods=hyper, key='x', app="Xcode" },
+  { mods=hyper, key='q', app="qutebrowser" },
 }
 
 hs.fnutils.each(appShortcuts, function(entry)
@@ -48,27 +49,27 @@ local grid = {
   { key='l', unit=hs.layout.right50 },
   { key='y', unit=hs.geometry.rect(0, 0, 0.5, 0.5) },
   { key='u', unit=hs.geometry.rect(0.5, 0, 0.5, 0.5) },
-  { key='b', unit=hs.geometry.rect(0, 0.5, 0.5, 0.5) },
-  { key='n', unit=hs.geometry.rect(0.5, 0.5, 0.5, 0.5) },
+  { key='n', unit=hs.geometry.rect(0, 0.5, 0.5, 0.5) },
+  { key='m', unit=hs.geometry.rect(0.5, 0.5, 0.5, 0.5) },
   { key='r', unit=hs.layout.left70 },
   { key='t', unit=hs.layout.right30 },
   { key='return', unit=hs.layout.maximized },
   { key='space', unit=hs.geometry(0.15, 0.1, 0.7, 0.8) },
 }
 
-local m = hs.hotkey.modal.new(hyper, 'u')
+local m = hs.hotkey.modal.new(hyper, 'u', nil)
 
 hs.fnutils.each(grid, function(entry)
-  m:bind('', entry.key, function()
+  m:bind('', entry.key, nil, function()
     hs.window.focusedWindow():moveToUnit(entry.unit)
     m:exit()
   end)
-  m:bind('shift', entry.key, function()
+  m:bind('shift', entry.key, nil, function()
     hs.window.focusedWindow():moveToUnit(entry.unit)
       :moveToScreen(hs.window.focusedWindow():screen():next())
     m:exit()
   end)
-  m:bind('', 'escape', function() m:exit() end)
-  m:bind('ctrl', 'c', function() m:exit() end)
 end)
 
+m:bind('', 'escape', nil, function() m:exit() end)
+m:bind('ctrl', 'c', nil, function() m:exit() end)
