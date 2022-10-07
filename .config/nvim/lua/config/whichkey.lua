@@ -74,6 +74,12 @@ function M.setup()
       s = { "<cmd>lua require('telescope.builtin').git_status()<cr>", "Git Status" },
       S = { "<cmd>Neogit<CR>", "Status" },
     },
+
+    d = {
+      name = "Quiver",
+      a = { "<cmd>lua require('quiver').add_current()<cr>", "Add to Quiver" },
+      d = { "<cmd>lua require('quiver').pick()<cr>", "Pick from Quiver" },
+    },
   }
 
   whichkey.setup(conf)

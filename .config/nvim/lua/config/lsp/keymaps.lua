@@ -51,7 +51,7 @@ local function keymappings(client, bufnr)
     },
   }
 
-  if client.resolved_capabilities.document_formatting then
+  if client.server_capabilities.document_formatting then
     keymapping.l.f = { "<cmd>lua vim.lsp.buf.formatting()<CR>", "Format Document" }
   end
 

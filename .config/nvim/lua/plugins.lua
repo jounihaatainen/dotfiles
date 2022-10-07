@@ -263,6 +263,14 @@ function M.setup()
       event = "BufReadPre",
     }
 
+    use {
+      "~/Documents/personal/quiver.nvim",
+      config = function()
+        require("quiver").setup()
+      end,
+      event = "vimEnter",
+    }
+
     if packer_bootstrap then
       print "Restarting Neovim required after installation!"
       require("packer").sync()
