@@ -167,3 +167,6 @@ c.url.searchengines = {
     "ggl": "https://google.com/search?q={}",
     "yt": "https://www.youtube.com/results?search_query={}"
 }
+
+# Custom key bindings
+config.bind(',v', 'spawn iina {url}')
