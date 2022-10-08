@@ -41,9 +41,43 @@ function M.setup()
 
     -- Colorscheme
     use {
-      "doums/darcula",
+      "catppuccin/nvim",
+      as = "catppuccin",
       config = function()
-        vim.cmd "colorscheme darcula"
+        vim.g.catppuccin_flavour = "frappe" -- latte, frappe, macchiato, mocha
+        require("catppuccin").setup({
+          integrations = {
+            cmp = true,
+            markdown = true,
+            neogit = true,
+            symbols_outline = true,
+            telescope = true,
+            treesitter = true,
+            -- treesitter_context = true,
+            ts_rainbow = true,
+            which_key = true,
+            dap = {
+              enabled = false,
+              enable_ui = false,
+            },
+            native_lsp = {
+              enabled = true,
+              virtual_text = {
+                errors = { "italic" },
+                hints = { "italic" },
+                warnings = { "italic" },
+                information = { "italic" },
+              },
+              underlines = {
+                errors = { "underline" },
+                hints = { "underline" },
+                warnings = { "underline" },
+                information = { "underline" },
+              },
+            },
+          }
+        })
+        vim.api.nvim_command "colorscheme catppuccin"
       end
     }
 
@@ -60,14 +94,6 @@ function M.setup()
     use {
       "nvim-lua/plenary.nvim",
       module = "plenary"
-    }
-
-    -- FZF lua
-    use {
-      "ibhagwan/fzf-lua",
-      event = "BufEnter",
-      wants = "nvim-web-devicons",
-      requires = { "junegunn/fzf", run = "./install --all" },
     }
 
    -- Telescope
@@ -92,7 +118,10 @@ function M.setup()
       requires = {
         "nvim-lua/popup.nvim",
         "nvim-lua/plenary.nvim",
-        { "nvim-telescope/telescope-fzf-native.nvim", run = "make" },
+        {
+          "nvim-telescope/telescope-fzf-native.nvim",
+          run = "make"
+        },
         "nvim-telescope/telescope-project.nvim",
         "cljoly/telescope-repo.nvim",
         "nvim-telescope/telescope-file-browser.nvim",
@@ -200,6 +229,12 @@ function M.setup()
         require("config.treesitter").setup()
       end,
       requires = {
+        {
+          "nvim-treesitter/nvim-treesitter-context",
+          config = function()
+            require("treesitter-context").setup()
+          end
+        },
         { "nvim-treesitter/nvim-treesitter-textobjects" },
         { "JoosepAlviste/nvim-ts-context-commentstring" },
         { "p00f/nvim-ts-rainbow" },

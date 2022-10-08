@@ -10,7 +10,7 @@ if status is-login
     set --export ANDROID_HOME $ANDROID/sdk;
     
     # Themes
-    set --export BAT_THEME Dracula
+    set --export BAT_THEME "Catppuccin-frappe"
 end
 
 # Path
@@ -61,6 +61,31 @@ if status is-interactive
         abbr lla 'll -a'
     end
 
+    # Reload fish config
+    abbr reload 'source ~/.config/fish/config.fish'
+
+    # cd into directory with fzf
+    abbr fcd 'cd (fd -td . | fzf --height 40%)'
+    
+    # Edit stuff with neovim
+    abbr v 'nvim'
+    abbr fv 'nvim (fzf -m --height 40%)'
+   
+    # Edit neovim configuration with neovim
+    abbr vconf 'nvim $HOME/.config/nvim'
+
+    # Edit personal projects and project files with neovim
+    abbr vp 'nvim (fd -td -d1 . $HOME/Documents/personal | fzf -m --height 40%)'
+    abbr vpf 'nvim (fd . $HOME/Documents/personal | fzf -m --height 40%)'
+
+    # Edit work projects and project files with neovim
+    abbr vw 'nvim (fd -td -d1 . $HOME/Documents/work | fzf -m --height 40%)'
+    abbr vwf 'nvim (fd . $HOME/Documents/work | fzf -m --height 40%)'
+
+    # Edit note files with neovim
+    abbr vn 'nvim (fd -tf . $HOME/Google\ Drive/Documents/Notes | fzf -m --height 40%)'
+
+    # Git with my dotfiles
     abbr dotfiles '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 end
 

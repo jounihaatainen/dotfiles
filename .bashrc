@@ -56,3 +56,5 @@ else
     PS4='-[\e[33m${BASH_SOURCE/.sh}\e[0m: \e[32m${LINENO}\e[0m] '
     PS4+='${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 fi
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

@@ -1,9 +1,5 @@
 local M = {}
 
-local function separator()
-  return "%="
-end
-
 local function lsp_client()
   local buf_clients = vim.lsp.buf_get_clients()
   if next(buf_clients) == nil then
@@ -37,7 +33,6 @@ local function lsp_progress(_, is_active)
   local spinners = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
   local ms = vim.loop.hrtime() / 1000000
   local frame = math.floor(ms / 120) % #spinners
-  --return table.concat(status, "  ") .. " " .. spinners[frame + 1]
   return table.concat(status, " | ") .. " " .. spinners[frame + 1]
 end
 
@@ -51,9 +46,7 @@ function M.setup()
     lualine.setup {
         options = {
             icons_enabled = true,
-            theme = 'darcula',
-            --component_separators = { left = '', right = ''},
-            --section_separators = { left = '', right = ''},
+            theme = 'catppuccin',
             component_separators = { left = '|', right = '|'},
             section_separators = { left = '', right = ''},
             disabled_filetypes = {},
