@@ -46,6 +46,8 @@ function M.setup()
       config = function()
         vim.g.catppuccin_flavour = "frappe" -- latte, frappe, macchiato, mocha
         require("catppuccin").setup({
+          -- transparent_background = true,
+          -- term_colors = true,
           integrations = {
             cmp = true,
             markdown = true,
