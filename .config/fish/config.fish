@@ -43,7 +43,6 @@ if status is-login
     fish_add_path ~/.dotnet/tools
 
     # Other
-    fish_add_path ~/.local/bin
     fish_add_path ~/Google\ Drive/bin
 end
 
@@ -74,13 +73,14 @@ if status is-interactive
     # Edit neovim configuration with neovim
     abbr vconf 'nvim $HOME/.config/nvim'
 
-    # Edit personal projects and project files with neovim
-    abbr vp 'nvim (fd -td -d1 . $HOME/Documents/personal | fzf -m --height 40%)'
-    abbr vpf 'nvim (fd . $HOME/Documents/personal | fzf -m --height 40%)'
+    # tmux shortcuts
+    abbr tp 'tmux-projectizer'
+    abbr ts 'tmux-switch'
 
-    # Edit work projects and project files with neovim
-    abbr vw 'nvim (fd -td -d1 . $HOME/Documents/work | fzf -m --height 40%)'
-    abbr vwf 'nvim (fd . $HOME/Documents/work | fzf -m --height 40%)'
+    # Edit personal & work projects and project files with neovim
+    abbr cdp 'cd (fd -td -d1 . --search-path $HOME/Documents/personal --search-path $HOME/Documents/work | fzf -m --height 40%)'
+    abbr vp 'cd (fd -td -d1 . --search-path $HOME/Documents/personal --search-path $HOME/Documents/work | fzf -m --height 40%) && nvim .'
+    abbr vpf 'nvim (fd . --search-path $HOME/Documents/personal --search-path $HOME/Documents/work | fzf -m --height 40%)'
 
     # Edit note files with neovim
     abbr vn 'nvim (fd -tf . $HOME/Google\ Drive/Documents/Notes | fzf -m --height 40%)'
