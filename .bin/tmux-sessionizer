@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+if [[ $# -ge 1 ]]; then
+    selected=$1
+    window_name=$2
+else
+    echo "Usage: $(basename $0) session_name [window_name]"
+    exit 1
+fi
+
+if [[ -z $selected ]]; then
+    exit 0
+fi
+
+selected_name=$(basename "$selected" | tr . _)
+tmux_running=$(pgrep tmux)
+
+if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
+    # not inside tmux and tmux not running
+    # -> create new session and attach to it
+    if [[ -z $window_name ]]; then
+        tmux new-session -s $selected_name -c $selected
+    else
+        tmux new-session -s $selected_name -c $selected -n $window_name
+    fi
+
+    exit 0
+fi
+
+if ! tmux has-session -t=$selected_name 2> /dev/null; then
+    # tmux session does not exist -> create new session
+    if [[ -z $window_name ]]; then
+        tmux new-session -ds $selected_name -c $selected
+    else
+        tmux new-session -ds $selected_name -c $selected -n $window_name
+    fi
+fi
+
+if [[ -z $TMUX ]]; then
+    # not inside tmux session -> attach to created or existing session
+    tmux attach-session -t $selected_name
+else
+    #inside tmux session -> switch to wanted session
+    tmux switch-client -t $selected_name
+fi

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# selected=$(find ~/Documents/personal ~/Documents/work -mindepth 1 -maxdepth 1 -type d | fzf)
+selected=$(fd -td -d1 . --search-path ~/Documents/personal --search-path ~/Documents/work | fzf -m --height 40%)
+
+if [[ -z $selected ]]; then
+    exit 0
+fi
+
+tmux-sessionizer $selected

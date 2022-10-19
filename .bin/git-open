@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Opens GitHub page for current directory in current branch
+# XXX: works currently only on MacOS (the `open` command)
+
+git-open() {
+    file=${1:-""}
+    git_branch=${2:-$(git symbolic-ref --quiet --short HEAD)}
+    git_project_root=$(git config remote.origin.url | sed "s~git@\(.*\):\(.*\)~https://\1/\2~" | sed "s~\(.*\).git\$~\1~")
+    git_directory=$(git rev-parse --show-prefix)
+    open ${git_project_root}/tree/${git_branch}/${git_directory}${file}
+}
+
+if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    echo "$(basename $0): not inside git work tree"
+    exit 1
+fi
+
+git_files=$(git ls-files .)
+
+if [[ -z "$git_files" ]]; then
+    echo "$(basename $0): not inside tracked directory"
+    exit 1
+fi
+
+git-open

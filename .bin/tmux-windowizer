@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+if [[ -z $TMUX ]]; then
+    echo "$(basename $0): not inside tmux session"
+    exit 1
+fi
+
+if [[ $# -ge 1 ]]; then
+    window_name=$1
+else
+    echo "Usage: $(basename $0) window_name commands_for_window"
+    exit 1
+fi
+
+session_name=$(tmux display-message -p "#S")
+target="$session_name:$window_name"
+
+if ! tmux has-session -t $target 2> /dev/null; then
+    tmux neww -dn $window_name
+fi
+
+shift
+
+if [[ $# -eq 0 ]]; then
+    exit 0
+fi
+
+tmux send-keys -t $target "$*" Enter

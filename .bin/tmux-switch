@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+if [[ $# -eq 1 ]]; then
+    selected=$1
+else
+    # echo "Usage: $(basename $0) session_name"
+    # exit 1
+    selected=$(tmux ls | fzf | cut -d ":" -f 1)
+fi
+
+if [[ -z $selected ]]; then
+    exit 0
+fi
+
+if [[ -z $TMUX ]]; then
+    # not inside tmux session -> attach to created or existing session
+    tmux attach-session -t $selected
+else
+    #inside tmux session -> switch to wanted session
+    tmux switch-client -t $selected
+fi

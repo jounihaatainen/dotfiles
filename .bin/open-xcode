@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# selected=$(find . -type d | fzf)
+selected=$(find . -type d \( -name *.xcworkspace -o -name *.xcodeproj \) | fzf -m --height 40%)
+
+if [[ -z "$selected" ]]; then
+    exit 0
+fi
+
+open "$selected"
