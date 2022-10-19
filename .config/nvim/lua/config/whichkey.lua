@@ -59,20 +59,20 @@ function M.setup()
       h = { "<cmd>lua require('telescope.builtin').help_tags()<cr>", "Help Tags" },
     },
 
-    p = {
-      name = "Project",
-      p = { "<cmd>lua require'telescope'.extensions.project.project{}<cr>", "List" },
-      s = { "<cmd>Telescope repo list<cr>", "Search" },
-    },
+    -- p = {
+    --   name = "Project",
+    --   p = { "<cmd>lua require'telescope'.extensions.project.project{}<cr>", "List" },
+    --   s = { "<cmd>Telescope repo list<cr>", "Search" },
+    -- },
 
-    P = {
-      name = "Packer",
-      c = { "<cmd>PackerCompile<cr>", "Compile" },
-      i = { "<cmd>PackerInstall<cr>", "Install" },
-      s = { "<cmd>PackerSync<cr>", "Sync" },
-      S = { "<cmd>PackerStatus<cr>", "Status" },
-      u = { "<cmd>PackerUpdate<cr>", "Update" },
-    },
+    -- P = {
+    --   name = "Packer",
+    --   c = { "<cmd>PackerCompile<cr>", "Compile" },
+    --   i = { "<cmd>PackerInstall<cr>", "Install" },
+    --   s = { "<cmd>PackerSync<cr>", "Sync" },
+    --   S = { "<cmd>PackerStatus<cr>", "Status" },
+    --   u = { "<cmd>PackerUpdate<cr>", "Update" },
+    -- },
 
     G = {
       name = "Git",
@@ -106,7 +106,6 @@ function M.setup()
   }
 
   -- local keymap_v = {
-  --   name = "Debug",
   --   e = { "<cmd>lua require'dapui'.eval()<cr>", "Evaluate" },
   -- }
 
