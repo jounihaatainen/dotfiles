@@ -163,7 +163,8 @@ catppuccin.setup(c, 'frappe')
 # Search engines
 c.url.open_base_url = True
 c.url.searchengines = {
-    "DEFAULT": "https://duckduckgo.com/?q={}",
+    "DEFAULT": "https://startpage.com/do/search?query={}",
+    "ddg": "https://duckduckgo.com/?q={}",
     "ggl": "https://google.com/search?q={}",
     "yt": "https://www.youtube.com/results?search_query={}"
 }
