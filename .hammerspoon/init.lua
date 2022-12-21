@@ -7,6 +7,13 @@ holdToQuit:start()
 local finderWatcher = require("finder-watcher")
 finderWatcher.start()
 
+-- Auto-layout when screen configuration changes
+-- Built-in Retina Display
+-- HP ZR2740w
+-- local autolayout = require("layouts")
+-- autolayout.setup({})
+-- autolayout.start()
+
 -- Keybinding helpers
 local hyper = { "cmd", "alt", "ctrl", "shift" }
 local meh = { "cmd", "alt", "ctrl" }
