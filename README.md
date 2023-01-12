@@ -12,7 +12,7 @@ links:
 Install on a new computer by pasting following in a MacOS or Linux shell
 prompt:
 
-    /bin/bash -c "$(curl -fsSL https://github.com/jounihaatainen/dotfiles/blob/main/.bin/dotfiles-install.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/jounihaatainen/dotfiles/main/.bin/dotfiles-install.sh)"
 
 It might work or not; No guarantees!
 
