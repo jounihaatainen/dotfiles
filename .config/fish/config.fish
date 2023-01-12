@@ -42,6 +42,9 @@ if status is-login
     # Dotnet
     fish_add_path ~/.dotnet/tools
 
+    # Rust, cargo & rustup
+    fish_add_path ~/.cargo/bin
+
     # Other
     fish_add_path ~/.bin
     fish_add_path ~/Google\ Drive/bin
