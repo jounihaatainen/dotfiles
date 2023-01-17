@@ -253,7 +253,7 @@ function M.setup()
         "nvim-lsp-installer",
         "lsp_signature.nvim",
         "lsp-colors.nvim",
-        "lua-dev.nvim",
+        "neodev.nvim",
         "vim-illuminate",
       },
       config = function()
@@ -264,7 +264,7 @@ function M.setup()
         "ray-x/lsp_signature.nvim",
         "folke/lsp-colors.nvim",
         "simrat39/symbols-outline.nvim",
-        "folke/lua-dev.nvim",
+        "folke/neodev.nvim",
         "RRethy/vim-illuminate",
       },
     }
