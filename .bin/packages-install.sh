@@ -15,6 +15,12 @@ function brew_install_self_if_not_in_path {
     fi
 }
 
+function post_install_actions {
+    ## Rebuild theme cache for bat (so it finds new themes from /.config/bat/themes)
+    ## All installed themes can be seen with: bat --list-themes
+    bat cache --build
+}
+
 function install_packages_linux {
     ## Install Homebrew's dependencies
     echo "Install dependencies for Homebrew"
@@ -33,6 +39,8 @@ function install_packages_linux {
     ## Ensure that libz is available for language servers (mainly ccls)
     echo "Ensure that libz is available for language servers (mainly ccls)"
     sudo apt install $APT_LSP_SERVER_SUPPORT_PACKAGES
+
+    post_install_actions
 }
 
 function install_packages_macos {
@@ -62,6 +70,8 @@ function install_packages_macos {
 
     ## Install command line tools
     brew install $BREW_PACKAGES $BREW_LSP_SERVER_SUPPORT_PACKAGES
+
+    post_install_actions
 }
 
 DOTFILES_OS="$(uname -s)"
