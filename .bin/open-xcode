@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# selected=$(find . -type d | fzf)
-selected=$(find . -type d \( -name *.xcworkspace -o -name *.xcodeproj \) | fzf -m --height 40%)
+selected=$(find . -type d \( -name *.xcworkspace -o -name *.xcodeproj \) | fzf-tmux -p -- --height 40%)
 
 if [[ -z "$selected" ]]; then
     exit 0
