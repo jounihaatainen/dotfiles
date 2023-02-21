@@ -108,6 +108,8 @@ require('packer').startup(function(use)
 
   use 'jlcrochet/vim-razor'
 
+  use '~/Documents/personal/quiver.nvim'
+
   if is_bootstrap then
     require('packer').sync()
   end
@@ -282,6 +284,15 @@ require('Comment').setup()
 --     changedelete = { text = '~' },
 --   },
 -- }
+
+-- Quiver setup
+require("quiver").setup()
+vim.keymap.set("n", "<leader>b", "<cmd>lua require('quiver').add_current()<cr>", { desc = "Add to quiver" })
+vim.keymap.set("n", "<leader>v", "<cmd>lua require('quiver').pick()<cr>", { desc = "Pick from quiver" })
+vim.keymap.set("n", "<leader>g", "<cmd>lua require('quiver').pick_in_float({ center_to_window = true })<cr>", { desc = "Pick from quiver in float" })
+vim.keymap.set("n", "<leader>1", "<cmd>lua require('quiver').go(1)<cr>zz", { desc = "Go to quiver location in index 1" })
+vim.keymap.set("n", "<leader>2", "<cmd>lua require('quiver').go(2)<cr>zz", { desc = "Go to quiver location in index 2" })
+vim.keymap.set("n", "<leader>3", "<cmd>lua require('quiver').go(3)<cr>zz", { desc = "Go to quiver location in index 3" })
 
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
@@ -515,8 +526,8 @@ cmp.setup {
     end,
   },
   mapping = cmp.mapping.preset.insert {
-    ['<C-d>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-f>'] = cmp.mapping.scroll_docs(4),
+    ['<C-p>'] = cmp.mapping.scroll_docs(-4),
+    ['<C-n>'] = cmp.mapping.scroll_docs(4),
     ['<C-Space>'] = cmp.mapping.complete(),
     ['<CR>'] = cmp.mapping.confirm {
       behavior = cmp.ConfirmBehavior.Replace,
@@ -534,22 +545,29 @@ cmp.setup {
     ['<C-k>'] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_prev_item()
+      else
+        fallback()
+      end
+    end, { 'i', 's' }),
+    ['<C-h>'] = cmp.mapping(function(fallback)
+      if cmp.visible() then
+        cmp.select_prev_item()
       elseif luasnip.jumpable(-1) then
         luasnip.jump(-1)
       else
         fallback()
       end
     end, { 'i', 's' }),
-    ['<C-h>'] = cmp.mapping(function(fallback)
+    ['<C-f>'] = cmp.mapping(function(fallback)
       if luasnip.choice_active() then
-        luasnip.change_choice(-1)
+        luasnip.change_choice(1)
       else
         fallback()
       end
     end, { 'i', 's' }),
-    ['<C-l>'] = cmp.mapping(function(fallback)
+    ['<C-d>'] = cmp.mapping(function(fallback)
       if luasnip.choice_active() then
-        luasnip.change_choice(1)
+        luasnip.change_choice(-1)
       else
         fallback()
       end
@@ -564,13 +582,24 @@ cmp.setup {
 -- luasnip configuration
 local ls = require('luasnip')
 local snippets = require('snippets')
+local types = require("luasnip.util.types")
 
 ls.config.set_config({
-    history = false,
-    update_events = "TextChanged,TextChangedI",
-    -- store_selection_keys = '<c-s>',
+  history = true,
+  update_events = "TextChanged,TextChangedI",
+  delete_checked_events = "TextChanged",
+  ext_base_prio = 300,
+  ext_prio_increase = 1,
+  -- store_selection_keys = '<c-j>',
+  ext_opts = {
+    [types.choiceNode] = {
+      active = {
+        virt_text = { { "<- [choice]", "Error" } },
+      }
+    }
+  }
 })
-ls.add_snippets(nil, snippets)
+snippets.add_snippets()
 
 -- vim.keymap.set({ "i", "s" }, "<C-l>", function()
 --     if ls.choice_active() then
