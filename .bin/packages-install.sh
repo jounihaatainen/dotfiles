@@ -59,11 +59,11 @@ function install_packages_macos {
     ## Install qutebrowser
     brew install --cask qutebrowser
 
-    ## Install IINA player
-    brew install --cask iina
-
     ## Install Docker Desktop
     brew install --cask docker
+
+    ## Install Inkscape
+    brew install --cask inkscape
 
     ## Install Vial
     brew install --cask vial
