@@ -43,6 +43,11 @@ require('packer').startup(function(use)
     after = 'nvim-treesitter',
   }
 
+  -- Debugging support
+  use 'mfussenegger/nvim-dap'
+  use { 'rcarriga/nvim-dap-ui', requires = { 'mfussenegger/nvim-dap' } }
+  use { 'theHamsta/nvim-dap-virtual-text', requires = { 'mfussenegger/nvim-dap', 'nvim-treesitter/nvim-treesitter' } }
+
   --  -- Git related plugins
   --  use 'tpope/vim-fugitive'
   --  use 'tpope/vim-rhubarb'
@@ -64,12 +69,11 @@ require('packer').startup(function(use)
           telescope = true,
           treesitter = true,
           -- treesitter_context = true,
-          -- ts_rainbow = true,
-          -- which_key = true,
+          fidget = true,
           dap = {
-            enabled = false,
-            enable_ui = false,
-},
+            enabled = true,
+            enable_ui = true,
+          },
           native_lsp = {
             enabled = true,
             virtual_text = {
@@ -85,7 +89,22 @@ require('packer').startup(function(use)
               information = { "underline" },
             },
           },
-        }
+        },
+        -- TODO: Why does this not work?
+        highlight_overrides = {
+          all = function(colors) -- Global highlight, will be replaced with custom_highlights if exists
+            return {
+              DapBreakpoint = { fg = colors.red },
+              DapBreakpointCondition = { fg = colors.red },
+              DapLogPoint = { fg = colors.sapphire },
+              DapStopped = { fg = colors.green },
+            }
+          end, -- Same for each flavour
+          -- latte = function(latte) end,
+          -- frappe = function(frappe) end,
+          -- macchiato = function(macchiato) end,
+          -- mocha = function(mocha) end,
+        },
       })
       vim.api.nvim_command "colorscheme catppuccin"
     end
@@ -93,7 +112,7 @@ require('packer').startup(function(use)
 
   use { -- Lualine
     "nvim-lualine/lualine.nvim",
-    requires = { "kyazdani42/nvim-web-devicons", opt = true },
+    requires = { "nvim-tree/nvim-web-devicons" },
   }
 
   --  use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
@@ -189,6 +208,14 @@ vim.o.sidescrolloff = 8
 -- Don't show mode because it's shown in lualine
 vim.o.showmode = false
 
+-- Folding
+vim.o.foldlevel = 20
+-- vim.o.foldmethod = 'expr'
+-- vim.o.foldexpr = 'nvim_treesitter#foldexpr()'
+-- vim.o.foldenable = false
+vim.o.foldmethod = 'indent'
+vim.o.foldnestmax = 3
+
 -- [[ Basic Keymaps ]]
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -252,15 +279,60 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
+-- Helper functions for lualine setup
+local get_cwd = function()
+  return vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
+end
+
+local get_icon_for_current_file = function()
+  local current_filename = vim.api.nvim_buf_get_name(0)
+  local filename = vim.fn.fnamemodify(current_filename, ':t')
+  local extension = vim.fn.fnamemodify(current_filename, ':e')
+  return require('nvim-web-devicons').get_icon(filename, extension, { default = true })
+end
+
+local get_icon = function(filetype)
+  return require("nvim-web-devicons").get_icon_by_filetype(filetype, {})
+end
+
+local get_lsp_status = function()
+  local bufnr = vim.api.nvim_win_get_buf(0)
+  if vim.tbl_count(vim.lsp.get_active_clients({ bufnr = bufnr })) == 0 then return '' end
+  return '⚙Lsp'
+end
+
 -- Set lualine as statusline
 -- See `:help lualine.txt`
+local custom_lualine_theme = require('custom-lualine-catppuccin-theme')
 require('lualine').setup {
   options = {
     icons_enabled = true,
-    theme = 'catppuccin',
-    component_separators = '|',
-    section_separators = '',
+    -- theme = 'catppuccin',
+    theme = custom_lualine_theme,
+    component_separators = '',
+    section_separators = { left = '', right = '' },
+    -- globalstatus = true, -- Use a single global status line for all windows
   },
+  sections = {
+    lualine_a = { "mode" },
+    lualine_b = { },
+    lualine_c = {
+      { "progress", padding = { left = 2, right = 0 } },
+      { "location", padding = { left = 2 } },
+      "%=",
+      "diagnostics",
+    },
+    lualine_x = {
+      { "branch", icon = get_icon('git'), padding = { left = 1, right = 1 } },
+      { get_lsp_status },
+    },
+    lualine_y = {
+      { get_icon_for_current_file, padding = { left = 1, right = 1 } },
+      { "filename" },
+    },
+    lualine_z = { get_cwd }
+  },
+  extensions = { 'nvim-dap-ui' },
 }
 
 -- Enable Comment.nvim
@@ -477,7 +549,7 @@ local servers = {
   -- tsserver = {},
   rust_analyzer = {},
   omnisharp = {},
-  sumneko_lua = {
+  lua_ls = {
     Lua = {
       workspace = { checkThirdParty = false },
       telemetry = { enable = false },
@@ -512,8 +584,238 @@ mason_lspconfig.setup_handlers {
   end,
 }
 
+-- Set custom signs for lsp diagnostics
+local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
+for type, icon in pairs(signs) do
+  local hl = "DiagnosticSign" .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
+
 -- Turn on lsp status information
-require('fidget').setup()
+require('fidget').setup({
+  window = {
+    blend = 0 -- For catppuccin integration
+  }
+})
+
+-- Setup debugging support
+local dap = require('dap')
+local dapui = require('dapui')
+
+dap.adapters.coreclr = {
+  type = 'executable',
+  command = os.getenv('HOME') .. '/.bin/netcoredbg/netcoredbg',
+  args = {'--interpreter=vscode'}
+}
+
+-- vim.g.dap_dotnet_build_project = function()
+--   local default_path = vim.fn.getcwd() .. '/'
+--   if vim.g['dotnet_last_proj_path'] ~= nil then
+--     default_path = vim.g['dotnet_last_proj_path']
+--   end
+--   local path = vim.fn.input({ prompt = 'Path to your *proj file', default = default_path, completion = 'file' })
+--   vim.g['dotnet_last_proj_path'] = path
+--   local cmd = 'dotnet build -c Debug ' .. path .. ' > /dev/null'
+--   print('')
+--   print('Cmd to execute: ' .. cmd)
+--   local f = os.execute(cmd)
+--   if f == 0 then
+--     print('\nBuild: 👍 ')
+--   else
+--     print('\nBuild: ⛔️ (code: ' .. f .. ')')
+--   end
+-- end
+
+vim.g.dap_dotnet_get_dll_path = function()
+  local request = function()
+    return vim.fn.input({ prompt = 'Path to dll: ', default = vim.fn.getcwd() .. '/bin/Debug/', completion = 'file' })
+  end
+  if vim.g['dap_dotnet_last_dll_path'] == nil then
+    vim.g['dap_dotnet_last_dll_path'] = request()
+  else
+    if vim.fn.confirm('Do you want to change the path to dll?\n' .. vim.g['dap_dotnet_last_dll_path'], '&yes\n&no', 2) == 1 then
+      vim.g['dap_dotnet_last_dll_path'] = request()
+    end
+  end
+  return vim.g['dap_dotnet_last_dll_path']
+end
+
+vim.g.dap_get_cmdline_args = function()
+  local request = function(default_args)
+    return vim.fn.input({ prompt = 'Command line arguments: ', default = default_args })
+  end
+  if vim.g['dap_last_cmdline_args'] == nil then
+    vim.g['dap_last_cmdline_args'] = request()
+  else
+    if vim.fn.confirm('Do you want to change the command line arguments?\n' .. vim.g['dap_last_cmdline_args'], '&yes\n&no', 2) == 1 then
+      vim.g['dap_last_cmdline_args'] = request(vim.g['dap_last_cmdline_args'])
+    end
+  end
+  return vim.g['dap_last_cmdline_args']
+end
+
+local dap_cs_config = {
+  {
+    type = "coreclr",
+    name = "Launch - netcoredbg manually",
+    request = "launch",
+    program = function()
+      -- if vim.fn.confirm('Should I recompile first?', '&yes\n&no', 2) == 1 then
+      --   vim.g.dap_dotnet_build_project()
+      -- end
+      return vim.g.dap_dotnet_get_dll_path()
+    end,
+    args = function()
+      if vim.fn.confirm('Do you want to give command line arguments to executable?', '&yes\n&no', 2) == 1 then
+        return { vim.g.dap_get_cmdline_args() }
+      end
+      return {}
+    end,
+  },
+}
+
+dap.configurations.cs = dap_cs_config
+dap.configurations.fsharp = dap_cs_config
+require('dap.ext.vscode').load_launchjs(nil, { coreclr = { 'cs', 'fsharp' } })
+
+-- Custom colors for debugging signs
+local frappe = require("catppuccin.palettes").get_palette("frappe")
+vim.api.nvim_set_hl(0, 'DapBreakpoint', { fg = frappe.red })
+vim.api.nvim_set_hl(0, 'DapLogPoint', { fg = frappe.sapphire })
+vim.api.nvim_set_hl(0, 'DapStopped', { fg = frappe.green })
+vim.fn.sign_define('DapBreakpoint', { text = '', texthl = 'DapBreakpoint', linehl = '', numhl = '' })
+vim.fn.sign_define('DapBreakpointCondition', { text = 'ﳁ', texthl = 'DapBreakpoint', linehl = '', numhl = '' })
+vim.fn.sign_define('DapBreakpointRejected', { text = '', texthl = 'DapBreakpoint', linehl = '', numhl = '' })
+vim.fn.sign_define('DapLogPoint', { text = '', texthl = 'DapLogPoint', linehl = '', numhl = '' })
+vim.fn.sign_define('DapStopped', { text = '', texthl = 'DapStopped', linehl = '', numhl = '' })
+
+vim.keymap.set('n', '<F4>', function() require('dap').terminate() end, { desc = "Dbg: Terminate" })
+vim.keymap.set('n', '<F5>', function() require('dap').continue() end, { desc = "Dbg: Continue" })
+vim.keymap.set('n', '<leader><F5>', function() require('dap').run_to_cursor() end, { desc = "Dbg: Run to Cursor" })
+vim.keymap.set('n', '<F6>', function() require('dap').step_over() end, { desc = "Dbg: Step Over" })
+vim.keymap.set('n', '<F7>', function() require('dap').step_into() end, { desc = "Dbg: Step Into" })
+vim.keymap.set('n', '<F8>', function() require('dap').step_out() end, { desc = "Dbg: Step Out" })
+vim.keymap.set('n', '<Leader>db', function() require('dap').toggle_breakpoint() end, { desc = "[D]bg: Toggle [B]reakpoint" })
+vim.keymap.set('n', '<Leader>dB', function() require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, { desc = "[D]bg: Set Conditional [B]reakpoint" })
+vim.keymap.set('n', '<Leader>lp', function()
+    require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: '))
+end, { desc = "Dbg: Set [L]og [P]oint" })
+vim.keymap.set('n', '<Leader>dr', function() require('dap').repl.open() end, { desc = "[D]bg: Open [R]epl" })
+vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end, { desc = "[D]bg: Run Last" })
+vim.keymap.set('n', '<Leader>du', function() require('dap').up() end, { desc = "[D]bg: Go [U]p in current stacktrace" })
+vim.keymap.set('n', '<Leader>dd', function() require('dap').down() end, { desc = "[D]bg: Go [D]own in current stacktrace" })
+vim.keymap.set({'n', 'v'}, '<Leader>dh', function()
+  require('dap.ui.widgets').hover()
+end, { desc = "[D]bg: Hover ??" })
+vim.keymap.set({'n', 'v'}, '<Leader>dp', function()
+  require('dap.ui.widgets').preview()
+end, { desc = "[D]bg: Preview ??" })
+vim.keymap.set('n', '<Leader>df', function()
+  local widgets = require('dap.ui.widgets')
+  widgets.centered_float(widgets.frames)
+end, { desc = "[D]bg: Show [F]rames" })
+vim.keymap.set('n', '<Leader>ds', function()
+  local widgets = require('dap.ui.widgets')
+  widgets.centered_float(widgets.scopes)
+end, { desc = "[D]bg: Show [S]copes" })
+vim.keymap.set('n', '<Leader>do', function() require('dapui').open() end, { desc = "[D]bg: [O]pen dap-ui" })
+vim.keymap.set('n', '<Leader>dq', function() require('dapui').close() end, { desc = "[D]bg: [Q]uit dap-ui" })
+
+dapui.setup({
+  icons = { expanded = "▾", collapsed = "▸", current_frame = "▸" },
+  mappings = {
+    -- Use a table to apply multiple mappings
+    expand = { "<CR>", "<2-LeftMouse>" },
+    open = "o",
+    remove = "d",
+    edit = "e",
+    repl = "r",
+    toggle = "t",
+  },
+  -- Use this to override mappings for specific elements
+  element_mappings = {
+    -- Example:
+    -- stacks = {
+    --   open = "<CR>",
+    --   expand = "o",
+    -- }
+  },
+  -- Expand lines larger than the window
+  -- Requires >= 0.7
+  expand_lines = vim.fn.has("nvim-0.7") == 1,
+  -- Layouts define sections of the screen to place windows.
+  -- The position can be "left", "right", "top" or "bottom".
+  -- The size specifies the height/width depending on position. It can be an Int
+  -- or a Float. Integer specifies height/width directly (i.e. 20 lines/columns) while
+  -- Float value specifies percentage (i.e. 0.3 - 30% of available lines/columns)
+  -- Elements are the elements shown in the layout (in order).
+  -- Layouts are opened in order so that earlier layouts take priority in window sizing.
+  layouts = {
+    {
+      elements = {
+      -- Elements can be strings or table with id and size keys.
+        { id = "scopes", size = 0.25 },
+        "breakpoints",
+        "stacks",
+        "watches",
+      },
+      size = 40, -- 40 columns
+      position = "left",
+    },
+    {
+      elements = {
+        "repl",
+        "console",
+      },
+      size = 0.25, -- 25% of total lines
+      position = "bottom",
+    },
+  },
+  controls = {
+    -- Requires Neovim nightly (or 0.8 when released)
+    enabled = true,
+    -- Display controls in this element
+    element = "repl",
+    icons = {
+      pause = "",
+      play = "",
+      step_into = "",
+      step_over = "",
+      step_out = "",
+      step_back = "",
+      run_last = "↻",
+      terminate = "□",
+    },
+  },
+  floating = {
+    max_height = nil, -- These can be integers or a float between 0 and 1.
+    max_width = nil, -- Floats will be treated as percentage of your screen.
+    border = "single", -- Border style. Can be "single", "double" or "rounded"
+    mappings = {
+      close = { "q", "<Esc>" },
+    },
+  },
+  windows = { indent = 1 },
+  render = {
+    max_type_length = nil, -- Can be integer or nil.
+    max_value_lines = 100, -- Can be integer or nil.
+  }
+})
+
+dap.listeners.after.event_initialized["dapui_config"] = function()
+  dapui.open()
+end
+dap.listeners.before.event_terminated["dapui_config"] = function()
+  dapui.close()
+end
+dap.listeners.before.event_exited["dapui_config"] = function()
+  dapui.close()
+end
+
+require('nvim-dap-virtual-text').setup({
+  commented = true
+})
+
 
 -- nvim-cmp setup
 local cmp = require 'cmp'
