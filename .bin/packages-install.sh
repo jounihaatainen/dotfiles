@@ -3,8 +3,8 @@
 set -e
 
 # Install packages
-BREW_PACKAGES="fish starship nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq httpie"
-BREW_LSP_SERVER_SUPPORT_PACKAGES="cmake llvm node"
+BREW_PACKAGES="fish starship nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq httpie node corepack"
+BREW_LSP_SERVER_SUPPORT_PACKAGES="cmake llvm"
 APT_LSP_SERVER_SUPPORT_PACKAGES="zlib1g-dev"
 
 function brew_install_self_if_not_in_path {
@@ -19,6 +19,9 @@ function post_install_actions {
     ## Rebuild theme cache for bat (so it finds new themes from /.config/bat/themes)
     ## All installed themes can be seen with: bat --list-themes
     bat cache --build
+
+    ## Enable corepack (mostly to get yarn)
+    corepack enable
 }
 
 function install_packages_linux {
