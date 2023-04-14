@@ -115,7 +115,7 @@ require('packer').startup(function(use)
     requires = { "nvim-tree/nvim-web-devicons" },
   }
 
-  --  use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
+   use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
   use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
   --  use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
 
@@ -268,6 +268,11 @@ vim.keymap.set("n", "<Right>", ":vertical resize +1<CR>", { silent = true })
 vim.keymap.set("n", "<Up>", ":resize -1<CR>", { silent = true })
 vim.keymap.set("n", "<Down>", ":resize +1<CR>", { silent = true })
 
+-- Switch between source and header
+local alternate_files = require("alternate_files")
+alternate_files.setup(alternate_files.default_extension_patterns())
+vim.keymap.set("n", "<leader>t", alternate_files.open_alternate_file, { silent = true })
+
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
@@ -280,10 +285,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 -- Helper functions for lualine setup
-local get_cwd = function()
-  return vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
-end
-
 local get_icon_for_current_file = function()
   local current_filename = vim.api.nvim_buf_get_name(0)
   local filename = vim.fn.fnamemodify(current_filename, ':t')
@@ -291,14 +292,14 @@ local get_icon_for_current_file = function()
   return require('nvim-web-devicons').get_icon(filename, extension, { default = true })
 end
 
-local get_icon = function(filetype)
-  return require("nvim-web-devicons").get_icon_by_filetype(filetype, {})
+local get_cwd = function()
+  return '󰉋 ' .. vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
 end
 
 local get_lsp_status = function()
   local bufnr = vim.api.nvim_win_get_buf(0)
   if vim.tbl_count(vim.lsp.get_active_clients({ bufnr = bufnr })) == 0 then return '' end
-  return '⚙Lsp'
+  return '󰚩 Lsp'
 end
 
 -- Set lualine as statusline
@@ -311,23 +312,23 @@ require('lualine').setup {
     theme = custom_lualine_theme,
     component_separators = '',
     section_separators = { left = '', right = '' },
-    -- globalstatus = true, -- Use a single global status line for all windows
+    globalstatus = true, -- Use a single global status line for all windows
   },
   sections = {
     lualine_a = { "mode" },
     lualine_b = { },
     lualine_c = {
-      { "progress", padding = { left = 2, right = 0 } },
       { "location", padding = { left = 2 } },
+      { "progress", padding = { left = 2, right = 0 } },
       "%=",
       "diagnostics",
     },
     lualine_x = {
-      { "branch", icon = get_icon('git'), padding = { left = 1, right = 1 } },
+      { "branch", icon = '', padding = { left = 1, right = 1 } },
       { get_lsp_status },
     },
     lualine_y = {
-      { get_icon_for_current_file, padding = { left = 1, right = 1 } },
+      { get_icon_for_current_file, padding = { left = 1, right = 0 } },
       { "filename" },
     },
     lualine_z = { get_cwd }
@@ -340,10 +341,10 @@ require('Comment').setup()
 
 -- Enable `lukas-reineke/indent-blankline.nvim`
 -- See `:help indent_blankline.txt`
--- require('indent_blankline').setup {
---   char = '┊',
---   show_trailing_blankline_indent = false,
--- }
+require('indent_blankline').setup {
+  char = '┊',
+  show_trailing_blankline_indent = false,
+}
 
 -- Gitsigns
 -- See `:help gitsigns.txt`
@@ -388,6 +389,8 @@ require('telescope').setup {
         -- ['<C-d>'] = false,
         ["<C-j>"] = require('telescope.actions').move_selection_next,
         ["<C-k>"] = require('telescope.actions').move_selection_previous,
+        ["<C-p>"] = require('telescope.actions').cycle_history_prev,
+        ["<C-n>"] = require('telescope.actions').cycle_history_next
       },
     },
   },
@@ -499,7 +502,7 @@ vim.keymap.set('n', '<leader>f', function() require('telescope.builtin').diagnos
 
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
-local on_attach = function(_, bufnr)
+local on_attach = function(client, bufnr)
   local nmap = function(keys, func, desc)
     if desc then
       desc = 'LSP: ' .. desc
@@ -535,6 +538,18 @@ local on_attach = function(_, bufnr)
   vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
     vim.lsp.buf.format()
   end, { desc = 'Format current buffer with LSP' })
+
+  -- XXX: Hack to make Omnisharp's semantic tokens names adhere to the spec
+  if client.name == 'omnisharp' then
+    local tokenModifiers = client.server_capabilities.semanticTokensProvider.legend.tokenModifiers
+    for i, v in ipairs(tokenModifiers) do
+      tokenModifiers[i] = v:gsub('[^%w_]', '_')
+    end
+    local tokenTypes = client.server_capabilities.semanticTokensProvider.legend.tokenTypes
+    for i, v in ipairs(tokenTypes) do
+      tokenTypes[i] = v:gsub('[^%w_]', '_')
+    end
+  end
 end
 
 -- Enable the following language servers
