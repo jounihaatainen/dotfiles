@@ -284,6 +284,16 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
+-- Copy absolute path to the file in the current buffer
+vim.api.nvim_create_user_command("CopyAbsPath", function()
+  vim.api.nvim_call_function("setreg", { "+", vim.fn.expand("%:p") })
+end, {})
+
+-- Copy relative path to the file in the current buffer
+vim.api.nvim_create_user_command("CopyRelPath", function()
+  vim.api.nvim_call_function("setreg", { "+", vim.fn.fnamemodify(vim.fn.expand("%"), ":.") })
+end, {})
+
 -- Helper functions for lualine setup
 local get_icon_for_current_file = function()
   local current_filename = vim.api.nvim_buf_get_name(0)
@@ -543,11 +553,13 @@ local on_attach = function(client, bufnr)
   if client.name == 'omnisharp' then
     local tokenModifiers = client.server_capabilities.semanticTokensProvider.legend.tokenModifiers
     for i, v in ipairs(tokenModifiers) do
-      tokenModifiers[i] = v:gsub('[^%w_]', '_')
+      local tmp = string.gsub(v, ' ', '_')
+      tokenModifiers[i] = string.gsub(tmp, '-_', '')
     end
     local tokenTypes = client.server_capabilities.semanticTokensProvider.legend.tokenTypes
     for i, v in ipairs(tokenTypes) do
-      tokenTypes[i] = v:gsub('[^%w_]', '_')
+      local tmp = string.gsub(v, ' ', '_')
+      tokenTypes[i] = string.gsub(tmp, '-_', '')
     end
   end
 end
@@ -928,6 +940,18 @@ snippets.add_snippets()
 --         ls.change_choice(-1)
 --     end
 -- end)
+
+-- XXX: Disable semantic highlighting because it is a mess with C# at the moment
+-- vim.api.nvim_create_autocmd('ColorScheme', {
+--   callback = function ()
+--     -- Hide semantic highlights for functions
+--     vim.api.nvim_set_hl(0, '@lsp.type.function', {})
+--     -- Hide all semantic highlights
+--     for _, group in ipairs(vim.fn.getcompletion("@lsp", "highlight")) do
+--       vim.api.nvim_set_hl(0, group, {})
+--     end
+--   end
+-- })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
