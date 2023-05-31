@@ -115,7 +115,7 @@ require('packer').startup(function(use)
     requires = { "nvim-tree/nvim-web-devicons" },
   }
 
-   use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
+  use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
   use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
   --  use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
 
@@ -125,7 +125,25 @@ require('packer').startup(function(use)
   -- Fuzzy Finder Algorithm which requires local dependencies to be built. Only load if `make` is available
   use { 'nvim-telescope/telescope-fzf-native.nvim', run = 'make', cond = vim.fn.executable 'make' == 1 }
 
-  use 'jlcrochet/vim-razor'
+  use 'jlcrochet/vim-razor' -- Razor highlighting
+
+  use "Exafunction/codeium.vim" -- Codeium
+  -- use {
+  --   "jcdickinson/codeium.nvim",
+  --   requires = {
+  --     "nvim-lua/plenary.nvim",
+  --     "hrsh7th/nvim-cmp",
+  --   },
+  -- }
+
+  use {
+    "jackMort/ChatGPT.nvim",
+    requires = {
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim"
+    },
+  }
 
   use '~/Documents/personal/quiver.nvim'
 
@@ -273,6 +291,18 @@ local alternate_files = require("alternate_files")
 alternate_files.setup(alternate_files.default_extension_patterns())
 vim.keymap.set("n", "<leader>t", alternate_files.open_alternate_file, { silent = true })
 
+-- Codeium
+-- See `:help codeium`
+vim.g.codeium_disable_bindings = 1
+-- vim.g.codeium_manual = 1
+vim.keymap.set('i', '<Tab>', function() return vim.fn['codeium#Accept']() end, { expr = true })
+vim.keymap.set('i', '<S-Tab>', function() return vim.fn['codeium#Complete']() end, { expr = true })
+vim.keymap.set('i', '<M-Tab>', function() return vim.fn['codeium#CycleCompletions'](1) end, { expr = true })
+vim.keymap.set('i', '<C-X>', function() return vim.fn['codeium#Clear']() end, { expr = true })
+
+-- ChatGPT
+vim.keymap.set('v', '<leader>le', function() require("chatgpt").edit_with_instructions() end, { expr = true })
+
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
@@ -312,6 +342,18 @@ local get_lsp_status = function()
   return '󰚩 Lsp'
 end
 
+-- get codeium status
+local function get_codeium_status()
+  local status = vim.fn['codeium#GetStatusString']()
+  -- local status = vim.api.nvim_eval('codeium#GetStatusString()')
+  if status == "OFF" then return '' end
+  if status == " ON" then return '' end
+  if status == " * " then return ' ...' end
+  if status == "   " then return '' end
+  if status == " 0 " then return '' end
+  return ' ' .. status
+end
+
 -- Set lualine as statusline
 -- See `:help lualine.txt`
 local custom_lualine_theme = require('custom-lualine-catppuccin-theme')
@@ -336,6 +378,7 @@ require('lualine').setup {
     lualine_x = {
       { "branch", icon = '', padding = { left = 1, right = 1 } },
       { get_lsp_status },
+      { get_codeium_status },
     },
     lualine_y = {
       { get_icon_for_current_file, padding = { left = 1, right = 0 } },
@@ -514,7 +557,7 @@ vim.keymap.set('n', '<leader>f', function() require('telescope.builtin').diagnos
 --  This function gets run when an LSP connects to a particular buffer.
 local on_attach = function(client, bufnr)
   local nmap = function(keys, func, desc)
-    if desc then
+    if desc ~= nil then
       desc = 'LSP: ' .. desc
     end
 
@@ -617,6 +660,14 @@ for type, icon in pairs(signs) do
   local hl = "DiagnosticSign" .. type
   vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
 end
+
+-- Change border of documentation hover window, See https://github.com/neovim/neovim/pull/13998.
+vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
+  border = "rounded",
+})
+vim.lsp.handlers["textDocument/signatureHelp"] =  vim.lsp.with(vim.lsp.handlers.signature_help, {
+    border = "rounded"
+})
 
 -- Turn on lsp status information
 require('fidget').setup({
@@ -843,6 +894,14 @@ require('nvim-dap-virtual-text').setup({
   commented = true
 })
 
+-- Codeium.nvim
+-- require("codeium").setup({})
+
+-- ChatGPT
+require("chatgpt").setup({
+  -- api_key_cmd = 'op read "op://private/Open AI/apikey" --no-newline'
+  api_key_cmd = 'cat ~/.openai_key'
+})
 
 -- nvim-cmp setup
 local cmp = require 'cmp'
@@ -905,6 +964,7 @@ cmp.setup {
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
+    -- { name = 'codeium', group_index = 1 },
   },
 }
 
