@@ -93,6 +93,9 @@ if status is-interactive
     # Edit note files with neovim
     abbr vn 'nvim (fd -tf . $HOME/Google\ Drive/Documents/Notes | fzf -m --height 40%)'
 
+    # Glow with config
+    abbr glow 'glow --config $HOME/.config/glow/config.yml'
+
     # Git with my dotfiles
     abbr dotfiles '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 end
