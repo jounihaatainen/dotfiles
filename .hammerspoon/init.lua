@@ -35,13 +35,13 @@ local appShortcuts = {
   { mods=hyper, key='s', appName="Slack" },
   { mods=hyper, key='e', appName="Microsoft Excel" },
   { mods=hyper, key='i', appName="Inkscape" },
-  { mods=hyper, key='g', appName="GitHub Desktop" },
+  -- { mods=hyper, key='g', appName="GitHub Desktop" },
   { mods=hyper, key='m', appName="Spotify" },
   { mods=hyper, key='p', appName="Preview" },
   { mods=hyper, key='v', appName="Vial" },
   { mods=hyper, key='d', appName="Docker Desktop" },
   { mods=hyper, key='a', appName="Azure Data Studio" },
-  { mods=hyper, key='x', appName="Xcode" },
+  -- { mods=hyper, key='x', appName="Xcode" },
   { mods=hyper, key='q', appName="qutebrowser" },
 }
 
