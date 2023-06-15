@@ -43,6 +43,8 @@ require('packer').startup(function(use)
     after = 'nvim-treesitter',
   }
 
+  use 'nvim-treesitter/nvim-treesitter-context' -- Show context
+
   -- Debugging support
   use 'mfussenegger/nvim-dap'
   use { 'rcarriga/nvim-dap-ui', requires = { 'mfussenegger/nvim-dap' } }
@@ -118,6 +120,7 @@ require('packer').startup(function(use)
   use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
   use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
   --  use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
+  use 'RRethy/vim-illuminate' -- Highlight current word
 
   -- Fuzzy Finder (files, lsp, etc)
   use { 'nvim-telescope/telescope.nvim', branch = '0.1.x', requires = { 'nvim-lua/plenary.nvim' } }
@@ -183,6 +186,9 @@ vim.o.incsearch = true
 -- Make line numbers default and show relative line numbers
 vim.wo.number = true
 vim.wo.relativenumber = true
+
+-- Highlight current line
+vim.o.cursorline = true
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -411,6 +417,15 @@ require('indent_blankline').setup {
 --   },
 -- }
 
+-- Illuminate setup
+require('illuminate').configure({
+  -- min_count_to_highlight: minimum number of matches required to perform highlighting
+  min_count_to_highlight = 2,
+})
+vim.cmd('hi def IlluminatedWordText guibg=#51576d')
+vim.cmd('hi def IlluminatedWordRead guibg=#51576d')
+vim.cmd('hi def IlluminatedWordWrite guibg=#51576d')
+
 -- Quiver setup
 require("quiver").setup()
 vim.keymap.set("n", "<leader>b", "<cmd>lua require('quiver').add_current()<cr>", { desc = "Add to quiver" })
@@ -545,6 +560,9 @@ require('nvim-treesitter.configs').setup {
     },
   },
 }
+
+-- Jump to context (with treesitter)
+vim.keymap.set("n", "[c", function() require("treesitter-context").go_to_context() end, { silent = true })
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
