@@ -18,9 +18,6 @@ require('packer').startup(function(use)
       'williamboman/mason.nvim',
       'williamboman/mason-lspconfig.nvim',
 
-      -- Useful status updates for LSP
-      'j-hui/fidget.nvim',
-
       -- Additional lua configuration, makes nvim stuff amazing
       'folke/neodev.nvim',
     },
@@ -28,7 +25,12 @@ require('packer').startup(function(use)
 
   use { -- Autocompletion
     'hrsh7th/nvim-cmp',
-    requires = { 'hrsh7th/cmp-nvim-lsp', 'L3MON4D3/LuaSnip', 'saadparwaiz1/cmp_luasnip' },
+    requires = {
+      'hrsh7th/cmp-nvim-lsp',
+      'L3MON4D3/LuaSnip',
+      'saadparwaiz1/cmp_luasnip',
+      'rafamadriz/friendly-snippets'
+    },
   }
 
   use { -- Highlight, edit, and navigate code
@@ -70,8 +72,7 @@ require('packer').startup(function(use)
           symbols_outline = true,
           telescope = true,
           treesitter = true,
-          -- treesitter_context = true,
-          fidget = true,
+          treesitter_context = true,
           dap = {
             enabled = true,
             enable_ui = true,
@@ -119,7 +120,6 @@ require('packer').startup(function(use)
 
   use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
   use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
-  --  use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
   use 'RRethy/vim-illuminate' -- Highlight current word
 
   -- Fuzzy Finder (files, lsp, etc)
@@ -131,13 +131,6 @@ require('packer').startup(function(use)
   use 'jlcrochet/vim-razor' -- Razor highlighting
 
   use "Exafunction/codeium.vim" -- Codeium
-  -- use {
-  --   "jcdickinson/codeium.nvim",
-  --   requires = {
-  --     "nvim-lua/plenary.nvim",
-  --     "hrsh7th/nvim-cmp",
-  --   },
-  -- }
 
   use {
     "jackMort/ChatGPT.nvim",
@@ -301,10 +294,10 @@ vim.keymap.set("n", "<leader>t", alternate_files.open_alternate_file, { silent =
 -- See `:help codeium`
 vim.g.codeium_disable_bindings = 1
 -- vim.g.codeium_manual = 1
-vim.keymap.set('i', '<Tab>', function() return vim.fn['codeium#Accept']() end, { expr = true })
-vim.keymap.set('i', '<S-Tab>', function() return vim.fn['codeium#Complete']() end, { expr = true })
-vim.keymap.set('i', '<M-Tab>', function() return vim.fn['codeium#CycleCompletions'](1) end, { expr = true })
-vim.keymap.set('i', '<C-X>', function() return vim.fn['codeium#Clear']() end, { expr = true })
+vim.keymap.set('i', '<Tab>', function() return vim.fn['codeium#Accept']() end, { silent = true, expr = true })
+vim.keymap.set('i', '<S-Tab>', function() return vim.fn['codeium#Complete']() end, { silent = true, expr = true })
+vim.keymap.set('i', '<M-Tab>', function() return vim.fn['codeium#CycleCompletions'](1) end, { silent = true, expr = true })
+vim.keymap.set('i', '<C-X>', function() return vim.fn['codeium#Clear']() end, { silent = true, expr = true })
 
 -- ChatGPT
 vim.keymap.set('v', '<leader>le', function() require("chatgpt").edit_with_instructions() end, { expr = true })
@@ -351,7 +344,6 @@ end
 -- get codeium status
 local function get_codeium_status()
   local status = vim.fn['codeium#GetStatusString']()
-  -- local status = vim.api.nvim_eval('codeium#GetStatusString()')
   if status == "OFF" then return '' end
   if status == " ON" then return '' end
   if status == " * " then return ' ...' end
@@ -439,22 +431,13 @@ vim.keymap.set("n", "<leader>3", "<cmd>lua require('quiver').go(3)<cr>zz", { des
 -- See `:help telescope` and `:help telescope.setup()`
 require('telescope').setup {
   defaults = {
-      layout_strategy = 'flex',
-      layout_config = {
-        vertical = {
-          preview_cutoff = 30,
-        },
-        flex = {
-          flip_columns = 140,
-          vertical = {
-            preview_cutoff = 30,
-          },
-        },
-      },
+    layout_strategy = 'vertical',
+    layout_config = {
+      vertical = { width = 0.9 },
+    },
+    path_display = { "smart" },
     mappings = {
       i = {
-        -- ['<C-u>'] = false,
-        -- ['<C-d>'] = false,
         ["<C-j>"] = require('telescope.actions').move_selection_next,
         ["<C-k>"] = require('telescope.actions').move_selection_previous,
         ["<C-p>"] = require('telescope.actions').cycle_history_prev,
@@ -477,11 +460,12 @@ vim.keymap.set('n', '<leader>/', function()
     previewer = false,
   })
 end, { desc = '[/] Fuzzily search in current buffer]' })
-
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
+vim.keymap.set('n', '<leader>sm', require('telescope.builtin').man_pages, { desc = '[S]earch [M]an Pages' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
+vim.keymap.set('n', '<leader>st', require('telescope.builtin').treesitter, { desc = '[S]earch by [T]reesitter' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 
 -- [[ Configure Treesitter ]]
@@ -685,13 +669,6 @@ vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
 })
 vim.lsp.handlers["textDocument/signatureHelp"] =  vim.lsp.with(vim.lsp.handlers.signature_help, {
     border = "rounded"
-})
-
--- Turn on lsp status information
-require('fidget').setup({
-  window = {
-    blend = 0 -- For catppuccin integration
-  }
 })
 
 -- Setup debugging support
@@ -912,13 +889,10 @@ require('nvim-dap-virtual-text').setup({
   commented = true
 })
 
--- Codeium.nvim
--- require("codeium").setup({})
-
 -- ChatGPT
 require("chatgpt").setup({
   -- api_key_cmd = 'op read "op://private/Open AI/apikey" --no-newline'
-  api_key_cmd = 'cat ~/.openai_key'
+  api_key_cmd = 'cat ' .. vim.fn.expand("$HOME") .. '/.openai_key'
 })
 
 -- nvim-cmp setup
@@ -982,7 +956,6 @@ cmp.setup {
   sources = {
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
-    -- { name = 'codeium', group_index = 1 },
   },
 }
 
@@ -1006,18 +979,12 @@ ls.config.set_config({
     }
   }
 })
-snippets.add_snippets()
+ls.filetype_extend("javascriptreact", { "html" })
+ls.filetype_extend("typescriptreact", { "html" })
+ls.filetype_extend("razor", { "html" })
 
--- vim.keymap.set({ "i", "s" }, "<C-l>", function()
---     if ls.choice_active() then
---         ls.change_choice(1)
---     end
--- end)
--- vim.keymap.set({ "i", "s" }, "<C-h>", function()
---     if ls.choice_active() then
---         ls.change_choice(-1)
---     end
--- end)
+snippets.add_snippets({ override_priority = 1100 })
+require("luasnip.loaders.from_vscode").lazy_load()
 
 -- XXX: Disable semantic highlighting because it is a mess with C# at the moment
 -- vim.api.nvim_create_autocmd('ColorScheme', {

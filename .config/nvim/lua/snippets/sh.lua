@@ -21,13 +21,14 @@ local events = require("luasnip.util.events")
 
 local M = {}
 
-M.add_snippets = function()
+M.add_snippets = function(opts)
+  opts = vim.tbl_deep_extend("force", { key = "sh", default_priority = 1000 }, opts or {})
   ls.add_snippets("sh", {
     s("shebang", {
       t { "#!/bin/sh", "" },
       i(0),
     }),
-  }, { key = "sh" })
+  }, opts)
 end
 
 return M

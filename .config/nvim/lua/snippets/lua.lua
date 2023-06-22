@@ -27,8 +27,9 @@ end
 
 local M = {}
 
-M.add_snippets = function()
-  ls.add_snippets("lua", {
+M.add_snippets = function(opts)
+  opts = vim.tbl_deep_extend("force", { key = "lua", default_priority = 1000 }, opts or {})
+  ls.add_snippets("lua",  {
     s({ trig="fn local", name="Local function definition", dscr="Insert local function definition" }, {
       t("-- @param: "), f(copy, 2),
       t({"","local "}), i(1), t(" = function("),i(2,"fn param"),t({ ")", "\t" }),
@@ -42,7 +43,7 @@ M.add_snippets = function()
       i(0),
       t({ "", "end" }),
     }),
-  }, { key = "lua" })
+  }, opts)
 end
 
 return M

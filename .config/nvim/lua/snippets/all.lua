@@ -21,13 +21,14 @@ local events = require("luasnip.util.events")
 
 local M = {}
 
-M.add_snippets = function()
+M.add_snippets = function(opts)
+  opts = vim.tbl_deep_extend("force", { key = "all", default_priority = 1000 }, opts or {})
   ls.add_snippets("all", {
     -- current date
     s({ trig="ymd", name="Current date", dscr="Insert the current date" }, {
       p(os.date, "%Y-%m-%d"),
     }),
-  }, { key = "all" })
+  }, opts)
 end
 
 return M

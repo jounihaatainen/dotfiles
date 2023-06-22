@@ -21,7 +21,8 @@ local events = require("luasnip.util.events")
 
 local M = {}
 
-M.add_snippets = function()
+M.add_snippets = function(opts)
+  opts = vim.tbl_deep_extend("force", { key = "markdown", default_priority = 1000 }, opts or {})
   ls.add_snippets("markdown", {
     s({ trig = "link", name = "markdown_link", dscr = "Create markdown link [txt](url)", }, {
       t("["),
@@ -52,7 +53,7 @@ M.add_snippets = function()
       t({ "", "```", "" }),
       i(0),
     }),
-  }, { key = "markdown" })
+  }, opts)
 end
 
 return M

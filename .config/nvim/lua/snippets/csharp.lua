@@ -257,8 +257,9 @@ local snippets = {
 
 local M = {}
 
-M.add_snippets = function()
-  ls.add_snippets("cs", snippets, { key = "cs" })
+M.add_snippets = function(opts)
+  opts = vim.tbl_deep_extend("force", { key = "cs", default_priority = 1000 }, opts or {})
+  ls.add_snippets("cs", snippets, opts)
 end
 
 return M
