@@ -10,7 +10,8 @@ if status is-login
     set --export ANDROID_HOME $ANDROID/sdk;
     
     # Themes
-    set --export BAT_THEME "Catppuccin-frappe"
+    # set --export BAT_THEME "Catppuccin-frappe"
+    set --export BAT_THEME "TokyoNight-storm"
     set --export FZF_DEFAULT_OPTS "\
         --color=bg+:#414559,bg:#303446,spinner:#f2d5cf,hl:#e78284 \
         --color=fg:#c6d0f5,header:#e78284,info:#ca9ee6,pointer:#f2d5cf \
@@ -57,11 +58,11 @@ end
 
 # Abbreviations & aliases
 if status is-interactive
-    if type -q exa
-        abbr ls 'exa'
-        abbr ll 'exa -l -g --icons'
-        abbr lla 'exa -a -l -g --icons'
-        abbr tree 'exa --tree'
+    if type -q eza
+        abbr ls 'eza'
+        abbr ll 'eza -l -g --icons'
+        abbr lla 'eza -a -l -g --icons'
+        abbr tree 'eza --tree'
     else
         abbr ls 'ls --color=auto'
         abbr ll 'ls --color=auto -l'

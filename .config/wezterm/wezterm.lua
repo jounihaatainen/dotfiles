@@ -1,17 +1,18 @@
 local wezterm = require "wezterm"
 
-function scheme_for_appearance(appearance)
+local function scheme_for_appearance(appearance)
 	if appearance:find "Dark" then
-		return "Catppuccin Frappe"
+		-- return "Catppuccin Frappe"
+		return "Tokyo Night Storm"
 	else
-		return "Catppuccin Latte"
+		-- return "Catppuccin Latte"
+		return "Tokyo Night Day"
 	end
 end
 
 return {
   send_composed_key_when_left_alt_is_pressed = true,
   font_size = 18.0,
-  -- color_scheme = "JetBrains Darcula",
 	color_scheme = scheme_for_appearance(wezterm.gui.get_appearance()),
   native_macos_fullscreen_mode = true,
   hide_tab_bar_if_only_one_tab = true,

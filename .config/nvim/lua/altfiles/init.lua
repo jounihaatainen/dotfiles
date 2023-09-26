@@ -17,7 +17,11 @@ M.default_extension_patterns = function()
 end
 
 M.setup = function(extensions_patterns_for_alternate_files)
-  M._extensions_patterns_for_alternate_files = extensions_patterns_for_alternate_files
+  if extension_patterns_for_alternate_files == nil then
+    M._extensions_patterns_for_alternate_files = M.default_extension_patterns()
+  else
+    M._extensions_patterns_for_alternate_files = extensions_patterns_for_alternate_files
+  end
 end
 
 M.open_alternate_file = function()
