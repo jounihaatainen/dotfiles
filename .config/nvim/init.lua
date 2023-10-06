@@ -73,6 +73,16 @@ local plugins = {
     config = function() vim.g.codeium_disable_bindings = 1 end
   },
   {
+    "mfussenegger/nvim-lint",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function() require("config.lint").setup() end
+  },
+  {
+    "stevearc/conform.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function() require("config.format").setup() end
+  },
+  {
     "numToStr/Comment.nvim",
     keys = {
       { "gc", mode = "v" },

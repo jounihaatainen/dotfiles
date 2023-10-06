@@ -4,6 +4,7 @@ M.setup = function()
   -- Enable the following language servers
   local servers = {
     tsserver = {},
+    tailwindcss = {},
     rust_analyzer = {},
     omnisharp = {},
     lua_ls = {
