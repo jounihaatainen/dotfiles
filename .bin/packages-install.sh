@@ -3,7 +3,7 @@
 set -e
 
 # Install packages
-BREW_PACKAGES="fish starship nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq jless httpie node corepack watchman"
+BREW_PACKAGES="fish starship nvim tmux fzf fd ripgrep bat git-delta glow slides exa lf jq jless httpie node"
 BREW_LSP_SERVER_SUPPORT_PACKAGES="cmake llvm"
 APT_LSP_SERVER_SUPPORT_PACKAGES="zlib1g-dev"
 
@@ -19,9 +19,6 @@ function post_install_actions {
     ## Rebuild theme cache for bat (so it finds new themes from /.config/bat/themes)
     ## All installed themes can be seen with: bat --list-themes
     bat cache --build
-
-    ## Enable corepack (mostly to get yarn)
-    corepack enable
 
     ## Show app switcher on all displays
     defaults write com.apple.dock appswitcher-all-displays -bool true && killall Dock
@@ -82,9 +79,6 @@ function install_packages_macos {
 
     ## Install Vial
     brew install --cask vial
-
-    ## Install 1Password CLI
-    brew install --cask 1password/tap/1password-cli
 
     ## Install command line tools
     brew install $BREW_PACKAGES $BREW_LSP_SERVER_SUPPORT_PACKAGES
