@@ -23,7 +23,7 @@ local function default_hl(name, style, opts)
   end
 
   if opts.link then
-    vim.api.nvim_set_hl(0, name, {link = style})
+    vim.api.nvim_set_hl(0, name, { link = style })
     return
   end
 
@@ -32,7 +32,7 @@ local function default_hl(name, style, opts)
 
   if normal ~= nil and fallback ~= nil then
     if normal.bg ~= nil and fallback.fg ~= nil then
-      vim.api.nvim_set_hl(0, name, {fg = normal.bg, bg = fallback.fg})
+      vim.api.nvim_set_hl(0, name, { fg = normal.bg, bg = fallback.fg })
     end
   end
 end
@@ -47,55 +47,55 @@ local mode_higroups = {
 }
 
 local function apply_hl()
-  default_hl('UserStatusBlock', 'StatusLine', {link = true})
+  default_hl('UserStatusBlock', 'StatusLine', { link = true })
   default_hl('UserStatusMode_DEFAULT', 'Comment')
 
-  default_hl(mode_higroups['NORMAL'],  'Directory')
-  default_hl(mode_higroups['VISUAL'],  'Number')
+  default_hl(mode_higroups['NORMAL'], 'Directory')
+  default_hl(mode_higroups['VISUAL'], 'Number')
   default_hl(mode_higroups['V-BLOCK'], 'Number')
-  default_hl(mode_higroups['V-LINE'],  'Number')
-  default_hl(mode_higroups['INSERT'],  'String')
+  default_hl(mode_higroups['V-LINE'], 'Number')
+  default_hl(mode_higroups['INSERT'], 'String')
   default_hl(mode_higroups['COMMAND'], 'Special')
 end
 
 -- mode_map copied from:
 -- https://github.com/nvim-lualine/lualine.nvim/blob/5113cdb32f9d9588a2b56de6d1df6e33b06a554a/lua/lualine/utils/mode.lua
 local mode_map = {
-  ['n']      = 'NORMAL',
-  ['no']     = 'O-PENDING',
-  ['nov']    = 'O-PENDING',
-  ['noV']    = 'O-PENDING',
-  ['no\22']  = 'O-PENDING',
-  ['niI']    = 'NORMAL',
-  ['niR']    = 'NORMAL',
-  ['niV']    = 'NORMAL',
-  ['nt']     = 'NORMAL',
-  ['v']      = 'VISUAL',
-  ['vs']     = 'VISUAL',
-  ['V']      = 'V-LINE',
-  ['Vs']     = 'V-LINE',
-  ['\22']    = 'V-BLOCK',
-  ['\22s']   = 'V-BLOCK',
-  ['s']      = 'SELECT',
-  ['S']      = 'S-LINE',
-  ['\19']    = 'S-BLOCK',
-  ['i']      = 'INSERT',
-  ['ic']     = 'INSERT',
-  ['ix']     = 'INSERT',
-  ['R']      = 'REPLACE',
-  ['Rc']     = 'REPLACE',
-  ['Rx']     = 'REPLACE',
-  ['Rv']     = 'V-REPLACE',
-  ['Rvc']    = 'V-REPLACE',
-  ['Rvx']    = 'V-REPLACE',
-  ['c']      = 'COMMAND',
-  ['cv']     = 'EX',
-  ['ce']     = 'EX',
-  ['r']      = 'REPLACE',
-  ['rm']     = 'MORE',
-  ['r?']     = 'CONFIRM',
-  ['!']      = 'SHELL',
-  ['t']      = 'TERMINAL',
+  ['n']     = 'NORMAL',
+  ['no']    = 'O-PENDING',
+  ['nov']   = 'O-PENDING',
+  ['noV']   = 'O-PENDING',
+  ['no\22'] = 'O-PENDING',
+  ['niI']   = 'NORMAL',
+  ['niR']   = 'NORMAL',
+  ['niV']   = 'NORMAL',
+  ['nt']    = 'NORMAL',
+  ['v']     = 'VISUAL',
+  ['vs']    = 'VISUAL',
+  ['V']     = 'V-LINE',
+  ['Vs']    = 'V-LINE',
+  ['\22']   = 'V-BLOCK',
+  ['\22s']  = 'V-BLOCK',
+  ['s']     = 'SELECT',
+  ['S']     = 'S-LINE',
+  ['\19']   = 'S-BLOCK',
+  ['i']     = 'INSERT',
+  ['ic']    = 'INSERT',
+  ['ix']    = 'INSERT',
+  ['R']     = 'REPLACE',
+  ['Rc']    = 'REPLACE',
+  ['Rx']    = 'REPLACE',
+  ['Rv']    = 'V-REPLACE',
+  ['Rvc']   = 'V-REPLACE',
+  ['Rvx']   = 'V-REPLACE',
+  ['c']     = 'COMMAND',
+  ['cv']    = 'EX',
+  ['ce']    = 'EX',
+  ['r']     = 'REPLACE',
+  ['rm']    = 'MORE',
+  ['r?']    = 'CONFIRM',
+  ['!']     = 'SHELL',
+  ['t']     = 'TERMINAL',
 }
 
 local fmt = string.format
@@ -128,14 +128,14 @@ local function show_sign(mode)
 
   local levels = vim.diagnostic.severity
   local signs = {
-    [levels.ERROR] = " ",
-    [levels.WARN] = " ",
-    [levels.INFO] = " ",
-    [levels.HINT] = " "
+    [levels.ERROR] = "",
+    [levels.WARN] = "",
+    [levels.INFO] = "",
+    [levels.HINT] = ""
   }
 
   for key, _ in pairs(levels) do
-    local number_of_issues = #vim.diagnostic.get(0, {severity = key})
+    local number_of_issues = #vim.diagnostic.get(0, { severity = key })
 
     if number_of_issues > 0 then
       return ' ' .. signs[key] .. ' '
@@ -235,7 +235,7 @@ state.short_inactive_status = {
 }
 
 function M.setup()
-  local augroup = vim.api.nvim_create_augroup('statusline_cmds', {clear = true})
+  local augroup = vim.api.nvim_create_augroup('statusline_cmds', { clear = true })
   local autocmd = vim.api.nvim_create_autocmd
   vim.opt.showmode = false
 
@@ -252,7 +252,7 @@ function M.setup()
   })
   autocmd('FileType', {
     group = augroup,
-    pattern = {'netrw'},
+    pattern = { 'netrw' },
     desc = 'Apply short statusline',
     callback = function()
       vim.wo.statusline = M.get_status('short')
@@ -341,4 +341,3 @@ end
 M.default_hl = apply_hl
 
 return M
-
