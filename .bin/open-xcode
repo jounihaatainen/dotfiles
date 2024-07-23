@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-selected=$(find . -type d \( -name *.xcworkspace -o -name *.xcodeproj \) | fzf-tmux -p -- --height 40%)
-
-if [[ -z "$selected" ]]; then
-    exit 0
-fi
-
-open "$selected"

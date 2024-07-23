@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Limit risk of leaving script with an ssh key unlocked
+# Keep in mind that SIGKILL cannot be trapped, so it is not 100% abuse-proof
+# So remove all pending authorizations
+trap 'ssh-add -D 2>/dev/null' EXIT INT
+
+# Spawn an ssh agent for a limited time only if none already available
+if [ -z "$SSH_AUTH_SOCK" ] && [ -z "$SSH_AGENT_PID" ] ; then
+  # Runs the agent only for the next 5 minutes
+  eval "$(ssh-agent -s -t 600)"
+fi
+
+# Now that we know an ssh-agent is available
+# we can register our ssh key with an expiration timeout
+# so the authentication does not remain exposed for too long
+ssh-add -t 600 # expire in 5 minutes
+ssh-add -t 600 ~/.ssh/github_id_ed25519 # expire in 5 minutes

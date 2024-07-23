@@ -1,0 +1,48 @@
+# This is Git's per-user configuration file.
+[user]
+    name = Jouni Haatainen
+    email = jouni.haatainen@gmail.com
+
+[core]
+#     pager = delta
+	autocrlf = false
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true
+    # minus-style                   = syntax "#3f2d3d"
+    # minus-non-emph-style          = syntax "#3f2d3d"
+    # minus-emph-style              = syntax "#763842"
+    # minus-empty-line-marker-style = syntax "#3f2d3d"
+    # line-numbers-minus-style      = "#b2555b"
+    # plus-style                    = syntax "#283b4d"
+    # plus-non-emph-style           = syntax "#283b4d"
+    # plus-emph-style               = syntax "#316172"
+    # plus-empty-line-marker-style  = syntax "#283b4d"
+    # line-numbers-plus-style       = "#266d6a"
+    # line-numbers-zero-style       = "#3b4261"
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+[alias]
+	ll = log --oneline
+	llg = log --oneline --graph
+	st = status -sb
+	last = log -1 HEAD --stat
+	se = !git rev-list --all | xargs git grep -F
+	clg = config --global -l
+	lld = log --pretty=\"%C(Yellow)%h %C(reset)%ad (%C(Green)%cr%C(reset)) %C(Cyan)%an: %C(auto)%d %C(reset)%s\" --date=short
+[init]
+	defaultBranch = main
