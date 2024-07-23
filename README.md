@@ -7,6 +7,6 @@ This repository contains my dotfiles.
 For example install neovim configuration with `stow`:
 
 ```bash
-git clone https://github.com/jounihaatainen/dotfiles
+git clone https://github.com/jounihaatainen/dotfiles.git
 cd dotfiles
 stow --target=$HOME nvim```
