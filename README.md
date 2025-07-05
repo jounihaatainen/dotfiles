@@ -11,4 +11,5 @@ For example install neovim configuration with `stow`:
 ```bash
 git clone https://github.com/jounihaatainen/dotfiles.git
 cd dotfiles
-stow --dotfiles --target=$HOME nvim```
+stow --dotfiles --target=$HOME nvim
+```
