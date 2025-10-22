@@ -46,27 +46,7 @@ M.setup = function()
   vim.keymap.set("n", "<Down>", ":resize +1<CR>", { silent = true })
 
   -- Switch between source and header
-  vim.keymap.set("n", "<leader>t", require("altfiles").open_alternate_file, { silent = true })
-
-  -- Telescope keymaps
-  -- vim.keymap.set("n", "<leader>?", "<cmd>Telescope oldfiles<cr>", { desc = "[?] Find recently opened files" })
-  -- vim.keymap.set("n", "<leader><space>", "<cmd>Telescope buffers<cr>", { desc = "[ ] Find existing buffers" })
-  -- vim.keymap.set("n", "<leader>/", function()
-  --   -- You can pass additional configuration to telescope to change theme, layout, etc.
-  --   require("telescope.builtin").current_buffer_fuzzy_find(require("telescope.themes").get_dropdown {
-  --     winblend = 10,
-  --     previewer = false,
-  --   })
-  -- end, { desc = "[/] Fuzzily search in current buffer]" })
-  -- vim.keymap.set("n", "<leader>sf", "<cmd>Telescope find_files<cr>", { desc = "[S]earch [F]iles" })
-  -- vim.keymap.set("n", "<leader>sh", "<cmd>Telescope help_tags<cr>", { desc = "[S]earch [H]elp" })
-  -- vim.keymap.set("n", "<leader>sm", "<cmd>Telescope man_pages<cr>", { desc = "[S]earch [M]an Pages" })
-  -- vim.keymap.set("n", "<leader>sw", "<cmd>Telescope grep_string<cr>", { desc = "[S]earch current [W]ord" })
-  -- vim.keymap.set("n", "<leader>sg", "<cmd>Telescope live_grep<cr>", { desc = "[S]earch by [G]rep" })
-  -- vim.keymap.set("n", "<leader>st", "<cmd>Telescope treesitter<cr>", { desc = "[S]earch by [T]reesitter" })
-  -- vim.keymap.set("n", "<leader>sd", "<cmd>Telescope diagnostics<cr>", { desc = "[S]earch [D]iagnostics" })
-  -- vim.keymap.set("n", "<leader>f", function() require("telescope.builtin").diagnostics({ bufnr = 0 }) end,
-  --   { desc = "Document Diagnostics" })
+  vim.keymap.set("n", "<leader>t", function() require("altfiles").open_alternate_file() end, { silent = true })
 
   -- Fzf keymaps
   vim.keymap.set("n", "<leader>?", "<cmd>History<cr>", { desc = "[?] Find recently opened files" })
@@ -83,12 +63,20 @@ M.setup = function()
   vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
   vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist)
 
-  -- Codeium
-  vim.keymap.set("i", "<Tab>", function() return vim.fn["codeium#Accept"]() end, { silent = true, expr = true })
-  vim.keymap.set("i", "<S-Tab>", function() return vim.fn["codeium#Complete"]() end, { silent = true, expr = true })
-  vim.keymap.set("i", "<M-Tab>", function() return vim.fn["codeium#CycleCompletions"](1) end,
-    { silent = true, expr = true })
-  vim.keymap.set("i", "<C-X>", function() return vim.fn["codeium#Clear"]() end, { silent = true, expr = true })
+  -- DAP keymaps
+  vim.keymap.set("n", "<F5>", "<Cmd>lua require'dap'.continue()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<F6>", "<Cmd>lua require('neotest').run.run({strategy = 'dap'})<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<F9>", "<Cmd>lua require'dap'.toggle_breakpoint()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<F10>", "<Cmd>lua require'dap'.step_over()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<F11>", "<Cmd>lua require'dap'.step_into()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<F8>", "<Cmd>lua require'dap'.step_out()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<F12>", "<Cmd>lua require'dap'.step_out()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<leader>dr", "<Cmd>lua require'dap'.repl.toggle()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<leader>dl", "<Cmd>lua require'dap'.run_last()<CR>", { noremap = true, silent = true })
+  vim.keymap.set("n", "<leader>dt", "<Cmd>lua require('neotest').run.run({strategy = 'dap'})<CR>", { noremap = true, silent = true, desc = 'debug nearest test' })
+  vim.keymap.set("n", "<leader>du", function() dapui.toggle() end, { noremap = true, silent = true, desc = "Toggle DAP UI" })
+  vim.keymap.set({ "n", "v" }, "<leader>dw", function() require("dapui").eval(nil, { enter = true }) end, { noremap = true, silent = true, desc = "Add word under cursor to Watches" })
+  vim.keymap.set({ "n", "v" }, "Q", function() require("dapui").eval() end, { noremap = true, silent = true, desc = "Hover/eval a single value (opens a tiny window instead of expanding the full object) " })
 
   -- File marks (my mini harpoon)
   vim.keymap.set("n", "<leader>mg", "mA", { silent = true, noremap = true })
@@ -103,6 +91,35 @@ M.setup = function()
   vim.keymap.set("n", "<leader>ga", "'E'\"zz", { silent = true, noremap = true })
   vim.keymap.set("n", "<leader>ml", "<cmd>marks ABCDE<cr>", { silent = true, noremap = true })
   vim.keymap.set("n", "<leader>mc", "<cmd>delmarks ABCDE<cr>", { silent = true, noremap = true })
+end
+
+M.setup_lsp = function(client, bufnr)
+  local nmap = function(keys, func, desc)
+    if desc ~= nil then
+      desc = "LSP: " .. desc
+    end
+
+    vim.keymap.set("n", keys, func, { buffer = bufnr, desc = desc })
+  end
+
+  -- LSP keymaps
+  nmap("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
+  nmap("<leader>la", vim.lsp.buf.code_action, "[L]sp Code [A]ction")
+
+  nmap("gd", vim.lsp.buf.definition, "[G]oto [D]efinition")
+  nmap("gI", vim.lsp.buf.implementation, "[G]oto [I]mplementation")
+  nmap("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
+  nmap("<leader>D", vim.lsp.buf.type_definition, "Type [D]efinition")
+
+  -- See `:help K` for why this keymap
+  nmap("K", vim.lsp.buf.hover, "Hover Documentation")
+  nmap("<C-k>", vim.lsp.buf.signature_help, "Signature Documentation")
+
+  nmap("<leader>wa", vim.lsp.buf.add_workspace_folder, "[W]orkspace [A]dd Folder")
+  nmap("<leader>wr", vim.lsp.buf.remove_workspace_folder, "[W]orkspace [R]emove Folder")
+  nmap("<leader>wl", function()
+    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+  end, "[W]orkspace [L]ist Folders")
 end
 
 return M

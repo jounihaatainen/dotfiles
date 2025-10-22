@@ -35,7 +35,7 @@ M.setup = function()
   vim.o.termguicolors = true
 
   -- Set completeopt to have a better completion experience
-  vim.o.completeopt = 'menuone,noselect'
+  vim.opt.completeopt = { "menuone" , "noselect" , "popup", "preview" }
 
   -- Indent settings
   vim.o.expandtab = true
@@ -71,6 +71,10 @@ M.setup = function()
     group = highlight_group,
     pattern = '*',
   })
+
+  -- Dotnet
+  vim.g.dotnet_error_only = false
+  vim.g.dotnet_show_project_file = false
 end
 
 return M

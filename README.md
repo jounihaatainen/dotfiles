@@ -13,3 +13,10 @@ git clone https://github.com/jounihaatainen/dotfiles.git
 cd dotfiles
 stow --dotfiles --target=$HOME nvim
 ```
+
+## TODO
+
+- When stow v2.4.0 is available:
+    - Change alacritty/.config/ to  alacritty/dot-config/
+    - Change nvim/.config/ to  nvim/dot-config/
+    - Discussed in [https://github.com/aspiers/stow/issues/33](this issue)
