@@ -12,6 +12,11 @@ if [ -x /usr/bin/eza ]; then
     alias ls='eza -lh --group-directories-first --icons=auto'
 fi
 
+# Alias fdfind to fd
+if [ ! -x /usr/bin/fd ] && [ -x /usr/bin/fdfind ]; then
+    alias fd=fdfind
+fi
+
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
