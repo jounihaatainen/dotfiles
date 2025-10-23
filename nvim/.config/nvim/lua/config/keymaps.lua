@@ -46,7 +46,7 @@ M.setup = function()
   vim.keymap.set("n", "<Down>", ":resize +1<CR>", { silent = true })
 
   -- Switch between source and header
-  vim.keymap.set("n", "<leader>t", function() require("altfiles").open_alternate_file() end, { silent = true })
+  --vim.keymap.set("n", "<leader>t", function() require("altfiles").open_alternate_file() end, { silent = true })
 
   -- Fzf keymaps
   vim.keymap.set("n", "<leader>?", "<cmd>History<cr>", { desc = "[?] Find recently opened files" })
