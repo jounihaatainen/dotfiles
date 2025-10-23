@@ -61,6 +61,18 @@ require("lazy").setup({
       },
     },
     {
+      "junegunn/fzf.vim",
+      dependencies = { "junegunn/fzf" },
+      config = function()
+        vim.g.fzf_vim = {
+          preview_window = {
+            "down,50%",
+            "ctrl-/",
+          }
+        }
+      end
+    },
+    {
       "williamboman/mason.nvim",
       opts = {
         registries = {
