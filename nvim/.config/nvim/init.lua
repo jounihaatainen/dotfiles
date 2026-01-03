@@ -1,200 +1,355 @@
--- Bootstrap lazy.nvim
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
-  local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
-  if vim.v.shell_error ~= 0 then
-    vim.api.nvim_echo({
-      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-      { out, "WarningMsg" },
-      { "\nPress any key to exit..." },
-    }, true, {})
-    vim.fn.getchar()
-    os.exit(1)
+-- Options --
+vim.o.number = true                                         -- sets number in signcolumn
+vim.o.relativenumber = true
+vim.o.signcolumn = 'yes:1'
+vim.o.wrap = false
+vim.o.expandtab = true                                      -- use 4 spaces to indent  
+vim.o.tabstop = 4
+vim.o.shiftwidth = 4
+vim.o.softtabstop = -1
+vim.o.smartindent = true
+vim.g.mapleader = ' '                                       -- sets <leader> to space
+vim.g.maplocalleader = ' '
+vim.o.scrolloff = 4
+vim.o.sidescrolloff = 4
+vim.o.ignorecase = true
+vim.o.smartcase = true
+vim.o.splitbelow = true
+vim.o.splitright = true
+vim.o.undofile = true
+-- vim.o.list = true                                           -- sets characters to represent whitespaces
+-- vim.o.listchars = 'trail:·,tab:–»,nbsp:␣,extends:»,eol: ,precedes:«,multispace: '
+vim.o.wildmode = 'longest:full,full'                        -- sets popupmenu to be whole list
+-- vim.o.completeopt='menu,noselect,noinsert,preview'          -- sets completion options to open but not select
+vim.o.completeopt = 'menu,menuone,popup,noinsert,fuzzy'     -- modern completion menu
+vim.o.wildoptions = fuzzy, pum, popup, menuone, preview     -- much of the same but for wildoptions
+
+-- Check for existence of needed tools --
+local fd = vim.fn.executable("fd") == 1 and "fd" or vim.fn.executable("fdfind") == 1 and "fdfind" or nil
+
+if not fd then
+  vim.notify("fd/fdfind not found", vim.log.levels.ERROR)
+end
+
+if vim.fn.executable("fzf") ~= 1 then
+  vim.notify("fzf not found", vim.log.levels.ERROR)
+end
+
+if vim.fn.executable("rg") ~= 1 then
+  vim.notify("rg not found", vim.log.levels.ERROR)
+end
+
+-- Helper funcs --
+local is_windows = package.config:sub(1,1) == "\\"
+
+local function split(s, delimiter)
+  local result = {}
+  local from  = 1
+  local delim_from, delim_to = string.find(s, delimiter, from)
+  while delim_from do
+    table.insert(result, string.sub(s, from , delim_from-1))
+    from  = delim_to + 1
+    delim_from, delim_to = string.find(s, delimiter, from)
+  end
+  table.insert(result, string.sub(s, from))
+  return result
+end
+
+-- Reusable terminal --
+local terminals = {}
+
+local function find_window_for_buf(bufnr)
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_buf(win) == bufnr then
+      return win
+    end
   end
 end
-vim.opt.rtp:prepend(lazypath)
 
--- Make sure to setup `mapleader` and `maplocalleader` before
--- loading lazy.nvim so that mappings are correct.
--- This is also a good place to setup other settings (vim.opt)
-require("config.options").setup()
+-- open terminal or jump to it if already open
+local function open_terminal(name, opts)
+  opts = opts or {}
+  local term = terminals[name]
 
-local keymaps = require("config.keymaps")
-keymaps.setup()
+  if term and term.bufnr and vim.api.nvim_buf_is_valid(term.bufnr) then
+    local win = find_window_for_buf(term.bufnr)
+    if win then
+      vim.api.nvim_set_current_win(win)
+      vim.cmd('startinsert')
+      return
+    end
+  end
 
--- Setup lazy.nvim
-require("lazy").setup({
-  spec = {
-    -- add your plugins here
-    {
-      "folke/tokyonight.nvim",
-      lazy = false,
-      priority = 1000,
-      opts = {},
-      config = function()
-        require("tokyonight").setup({ style = "storm" })
-        vim.cmd [[colorscheme tokyonight]]
+  if opts.vertical then
+      vim.cmd('vsplit')
+      vim.cmd('vertical resize ' .. (opts.width or 80))
+  else
+    vim.cmd('split')
+    vim.cmd('resize ' .. (opts.height or 15))
+  end
+
+  if term and term.bufnr and vim.api.nvim_buf_is_valid(term.bufnr) then
+    vim.api.nvim_set_current_buf(term.bufnr)
+  else
+    vim.cmd('terminal')
+    vim.cmd('keepalt file ' .. name)
+    terminals[name] = { bufnr = vim.api.nvim_get_current_buf() }
+  end
+
+  vim.cmd('startinsert')
+end
+
+-- open or jump to terminal if not open, close it if open
+local function toggle_or_jump_terminal(name, opts)
+  opts = opts or {}
+  local term = terminals[name]
+  if term and term.bufnr then
+    local win = find_window_for_buf(term.bufnr)
+    if win then
+      vim.api.nvim_win_close(win, true)
+      return
+    end
+  end
+
+  open_terminal(name, opts)
+end
+
+-- autocmd to clean up the terminal from "manager"
+vim.api.nvim_create_autocmd('TermClose', {
+  callback = function(args)
+    for name, term in pairs(terminals) do
+      if term.bufnr == args.buf then
+        terminals[name] = nil
       end
-    },
-    {
-      "nvim-treesitter/nvim-treesitter",
-      opts = {
-        ensure_installed = {
-	        "bash",
-	        "c",
-          "c_sharp",
-          "css",
-          "diff",
-          "html",
-          "javascript",
-          "json",
-          "markdown",
-          "markdown_inline",
-          "lua",
-          "razor",
-          "vim",
-          "vimdoc",
-          "xml",
-          "yaml",
-        },
-      },
-    },
-    {
-      "junegunn/fzf.vim",
-      dependencies = { "junegunn/fzf" },
-      config = function()
-        vim.g.fzf_vim = {
-          preview_window = {
-            "down,50%",
-            "ctrl-/",
-          }
-        }
-      end
-    },
-    {
-      "williamboman/mason.nvim",
-      opts = {
-        registries = {
-          "github:mason-org/mason-registry",
-          "github:Crashdummyy/mason-registry",
-        },
-      },
-    },
-    {
-      "seblyng/roslyn.nvim",
-      ---@module 'roslyn.config'
-      ---@type RoslynNvimConfig
-      ft = { "cs", "razor" },
-      opts = {
-        -- your configuration comes here; leave empty for default settings
-      },
-      dependencies = {
-        {
-          -- By loading as a dependencies, we ensure that we are available to set the handlers for Roslyn.
-          "tris203/rzls.nvim",
-          config = true,
-        },
-      },
-      lazy = false,
-      config = function()
-        --require("config.lsp").setup_roslyn(function(client, bufnr) keymaps.setup_lsp(client, bufnr) end)
-        require("config.lsp").setup_roslyn(keymaps.setup_lsp)
+    end
+  end,
+})
+
+-- Fuzzy finding --
+local function open_split_term(term_cmd, bname, opt)
+  local saved_spk = vim.o.splitkeep
+  local src_winid = vim.fn.win_getid()
+  -- local fzf_lines = (vim.v.count > 2 and vim.v.count) or 10
+  local fzf_lines = 10
+  local tempfile = vim.fn.tempname()
+  local on_exit = function ()
+    vim.cmd.bwipeout()
+    vim.o.splitkeep = saved_spk
+    vim.fn.win_gotoid(src_winid)
+    if vim.fn.filereadable(tempfile) then
+      local lines = vim.fn.readfile(tempfile)
+      if #lines > 0 then (opt.action or vim.cmd.edit)(lines[1]) end
+    end
+    vim.fn.delete(tempfile)
+    if opt.on_exit then opt.on_exit() end
+  end
+  vim.o.splitkeep = 'screen'
+  vim.cmd('botright' .. (fzf_lines + 1) .. 'new')
+  -- NOTE: `cwd` can also be specified for the job
+  local id = vim.fn.termopen(term_cmd .. ' > ' .. tempfile, { on_exit = on_exit, env = opt.env, })
+  vim.keymap.set('n', '<esc>', function () vim.fn.jobstop(id) end, {buffer=true})
+  vim.cmd('keepalt file ' .. bname)
+  vim.cmd.startinsert()
+end
+
+local function fuzzy_find_in_split(input_cmd, bname, opt)
+  local preview = opt.preview or ''
+  local term_cmd = input_cmd .. ' | fzf --no-multi --reverse --preview="' .. preview .. '"' 
+  open_split_term(term_cmd, bname, opt)
+end
+
+local function fuzzy_find_files()
+  local preview = 'cat {}'
+  if is_windows then
+    preview = 'pwsh -Command Get-Content {}'
+  end
+  -- fzf("find . -path '*/.git' -prune -o -type f ! -name '.' -print", 'fuzzy find', { preview = preview })
+  fuzzy_find_in_split(fd .. " --type f --hidden --exclude .git", 'fuzzy find', { preview = preview })
+end
+
+-- XXX: this doesn't work on windows without POSIX shell (reload fails)
+local function fuzzy_grep()
+  local rg_cmd = 'rg --column --line-number --no-heading --smart-case'
+  local term_cmd = table.concat({
+    rg_cmd .. ' ${*:-} |',
+    'fzf',
+    '--disabled',
+    '--bind "change:reload:sleep 0.1; ' .. rg_cmd .. ' {q} || true"',
+    '--delimiter :',
+    '--no-multi',
+    '--reverse'
+  }, " ")
+
+  open_split_term(term_cmd, 'fuzzy grep', {
+      action = function (line)
+        local file, lnum, col = unpack(vim.split(line, ':'))
+        vim.cmd.edit(file)
+        vim.fn.cursor(lnum, col)
+        vim.cmd('normal! zz')
       end,
-      init = function()
-        -- We add the Razor file types before the plugin loads.
-        vim.filetype.add({
-          extension = {
-            razor = "razor",
-            cshtml = "razor",
-          },
-        })
-      end,
+    })
+end
+
+local function fuzzy_find_buffers()
+  local bufstr = string.gsub(vim.fn.execute('ls'), '^\n', '')
+  local bufs = split(bufstr, '\n')
+  local tempfile = vim.fn.tempname()
+  vim.fn.writefile(bufs, tempfile)
+  fuzzy_find_in_split('cat ' .. tempfile, 'fzf buffers', {
+    action = function(line)
+        vim.cmd('b' .. string.match(line, '%d+'))
+    end,
+    on_exit = function()
+        vim.fn.delete(tempfile)
+    end
+  })
+end
+
+-- Quickfix list --
+local function show_arglist_in_qf()
+  vim.cmd.argdedupe()
+  local list = vim.fn.argv()
+  if #list > 0 then
+    local qf_items = {}
+    for _, filename in ipairs(list) do
+      table.insert(qf_items, {
+        filename = filename,
+        lnum = 1,
+        text = filename
+      })
+    end
+    vim.fn.setqflist(qf_items, 'r')
+    vim.cmd.copen()
+  end
+end
+
+-- LSP --
+vim.lsp.config('go_ls', {
+  cmd = { 'gopls' },
+  root_markers = { 'go.work', 'go.mod', '.git' },
+  filetypes = { 'go', 'gomod', 'gowork', 'gotmpl' },
+})
+
+vim.lsp.enable({ 'go_ls' })
+
+vim.diagnostic.config({ -- config for diagnostic visuals, sets error sign and indicators
+  virtual_text = true,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = '!',
+      [vim.diagnostic.severity.WARN] = '*',
+      [vim.diagnostic.severity.HINT] = '?',
+      [vim.diagnostic.severity.INFO] = '#',
     },
-    {
-      "mfussenegger/nvim-dap",
-      dependencies = {
-        "rcarriga/nvim-dap-ui",
-      },
-      config = function()
-        require "config.dap"
-      end,
-      event = "VeryLazy",
+    numhl = {
+      [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
+      [vim.diagnostic.severity.WARN] = 'WarningMsg',
+      [vim.diagnostic.severity.HINT] = 'HintMsg',
+      [vim.diagnostic.severity.INFO] = 'InfoMsg',
     },
-    {
-      "rcarriga/nvim-dap-ui",
-      dependencies = {
-        "mfussenegger/nvim-dap",
-      },
-      config = function()
-        require "config.dap-ui"
-      end,
-    },
-    { "nvim-neotest/nvim-nio" },
-    {
-      "nvim-neotest/neotest",
-      commit = "52fca6717ef972113ddd6ca223e30ad0abb2800c", -- REMOVE when finding test works for dotnet
-      requires = {
-        {
-          "Issafalcon/neotest-dotnet",
-        }
-      },
-      dependencies = {
-        "nvim-neotest/nvim-nio",
-        "nvim-lua/plenary.nvim",
-        "antoinemadec/FixCursorHold.nvim",
-        "nvim-treesitter/nvim-treesitter"
-      }
-    },
-    {
-      "Issafalcon/neotest-dotnet",
-      lazy = false,
-      dependencies = {
-        "nvim-neotest/neotest"
-      }
-    },
-    {
-      "rachartier/tiny-inline-diagnostic.nvim",
-      event = "VeryLazy", -- Or `LspAttach`
-      priority = 1000,    -- needs to be loaded in first
-      config = function()
-        require('tiny-inline-diagnostic').setup()
-        vim.diagnostic.config({ virtual_text = false }) -- Only if needed in your configuration, if you already have native LSP diagnostics
-      end
-    },
-    { 'nvim-mini/mini.completion', version = '*' },
   },
-  -- Configure any other settings here. See the documentation for more details.
-  -- colorscheme that will be used when installing plugins.
-  install = { colorscheme = { "habamax" } },
-  -- automatically check for plugin updates
-  checker = { enabled = true },
+  update_in_insert = true,
 })
 
-require('mini.completion').setup()
+-- Keymaps --
+vim.keymap.set('i', 'kj', '<Esc>', { desc = 'escape insert mode with kj' })
+vim.keymap.set('i', '<C-space>', '<C-x><C-o>', { desc = 'lsp/filetype autocompletion (does not work in windows terminal)' })
 
---require("config.lsp").setup(function(client, bufnr) keymaps.setup_lsp(client, bufnr) end)
-require("config.lsp").setup(keymaps.setup_lsp)
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'remove highlight after search on esc' })
+vim.keymap.set('n', '<leader>a', function() toggle_or_jump_terminal('terminal') end, { desc = 'toggle terminal in horizontal split' })
+vim.keymap.set('n', '<leader>A', function() toggle_or_jump_terminal('terminal', { vertical = true }) end, { desc = 'toggle terminal in vertical split' })
+vim.keymap.set('n', '<C-j>', ':m .+1<CR>==', { desc = 'move current line down fixing indent' })
+vim.keymap.set('n', '<C-k>', ':m .-2<CR>==', { desc = 'move current line up fixing indent' })
+vim.keymap.set('n', '<leader>f', fuzzy_find_files, { desc = 'fuzzy find file(s)' })
+vim.keymap.set('n', '<leader>g', fuzzy_grep, { desc = 'fuzzy grep in file(s)' })
+vim.keymap.set('n', '<leader><space>', fuzzy_find_buffers, { desc = 'fuzzy find buffer' })
+for i = 1,4 do -- mini harpoon with arglist
+  vim.keymap.set('n', '<leader>'..i, '<cmd>argu '..i..'<CR>', { silent = true, desc = 'Go to arg '..i })
+  vim.keymap.set('n', '<leader>h'..i, '<cmd>'..(i-1)..'arga<CR>', { silent = true, desc = 'Add current file to arg '..i })
+  vim.keymap.set('n', '<leader>H'..i, '<cmd>'..i..'argd<CR>', { silent = true, desc = 'Remove current arg '..i })
+end
+vim.keymap.set('n', '<leader>hq', show_arglist_in_qf, { silent = true, desc = "Show args in qf" })
+vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.open_float()<CR>')
+vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
 
-require("neotest").setup({
-  adapters = {
-    require("neotest-dotnet")
-  }
+vim.keymap.set('v', '<C-j>', ":m'>+<CR>gv=gv", { desc ='move selected lines up, fixing indent' })
+vim.keymap.set('v', '<C-k>', ':m-2<CR>gv=gv', { desc = 'move selected lines down, fixing indent' })
+vim.keymap.set('v', "<leader>'", "c''<Esc>P", { desc = "surround selection with '" })
+vim.keymap.set('v', '<leader>"', 'c""<Esc>P', { desc = 'surround selection with "' })
+vim.keymap.set('v', '<leader>(', 'c()<Esc>P', { desc = 'surround selection with ()' })
+vim.keymap.set('v', '<leader>[', 'c[]<Esc>P', { desc = 'surround selection with []' })
+vim.keymap.set('v', '<leader>{', 'c{}<Esc>P', { desc = 'surround selection with {}' })
+
+vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { desc = 'escape terminal insert mode' })
+vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], { desc = 'window navigation from terminal' })
+
+-- Autocommands --
+-- vim.api.nvim_create_autocmd('BufWritePre', { -- removes trailing space on save
+--   pattern = '',
+--   command = ":%s/\\s\\+$//e"
+-- })
+vim.api.nvim_create_autocmd('LspAttach', { --attach lsp to buffertype
+  group = vim.api.nvim_create_augroup('my.lsp', {}),
+  callback = function(args)
+    local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+
+    if client:supports_method('textDocument/completion') then
+      local chars = {}; for i = 32, 126 do table.insert(chars, string.char(i)) end
+      client.server_capabilities.completionProvider.triggerCharacters = chars
+      vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = false })
+    end
+
+    if not client:supports_method('textDocument/willSaveWaitUntil')
+        and client:supports_method('textDocument/formatting') then
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        group = vim.api.nvim_create_augroup('my.lsp', { clear = false }),
+        buffer = args.buf,
+        callback = function()
+          vim.lsp.buf.format({ bufnr = args.buf, id = client.id, timeout_ms = 1000 })
+        end,
+      })
+    end
+
+    -- Key mappings for lsp (when attached to buffer)
+    vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>') -- go to definition
+    -- Global defaults when neovim starts:
+    --     "gra" (Normal and Visual mode) is mapped to vim.lsp.buf.code_action()
+    --     "gri" is mapped to vim.lsp.buf.implementation()
+    --     "grn" is mapped to vim.lsp.buf.rename()
+    --     "grr" is mapped to vim.lsp.buf.references()
+    --     "grt" is mapped to vim.lsp.buf.type_definition()
+    --     "gO" is mapped to vim.lsp.buf.document_symbol()
+    --     CTRL-S (Insert mode) is mapped to vim.lsp.buf.signature_help()
+    --     "an" and "in" (Visual and Operator-pending mode) are mapped to outer and inner
+    --                   incremental selections, respectively, using vim.lsp.buf.selection_range() 
+  end,
 })
 
-require("tiny-inline-diagnostic").setup({
-  -- signs = {
-  --   left = "",
-  --   right = "",
-  --   diag = "●",
-  --   arrow = "    ",
-  --   up_arrow = "    ",
-  --   vertical = " │",
-  --   vertical_end = " └",
-  -- },
-  -- blend = {
-  --   factor = 0.22,
-  -- },
+ -- opens diagnostic popup if cursor sits on a line with lsp diagnostic message for a period of time
+vim.cmd [[autocmd CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]
+
+-- Highlight yanked text briefly on yank
+vim.api.nvim_create_autocmd('TextYankPost', { callback = function() vim.highlight.on_yank() end })
+
+-- Go specific settings
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "go",
+  callback = function()
+    vim.opt_local.expandtab = false   -- use real tabs
+    vim.opt_local.tabstop = 4         -- tab width
+    vim.opt_local.shiftwidth = 4      -- indentation size
+    vim.opt_local.softtabstop = 0     -- optional: <Tab> inserts real tab
+  end,
 })
 
--- vim: ts=2 sts=2 sw=2 et
+-- Lua specific settings
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "lua",
+  callback = function()
+    vim.opt_local.expandtab = true    -- use spaces for tabs
+    vim.opt_local.tabstop = 2         -- tab width
+    vim.opt_local.shiftwidth = 2      -- indentation size
+    vim.opt_local.softtabstop = -1    -- optional: <Tab> inserts real tab
+  end,
+})
+

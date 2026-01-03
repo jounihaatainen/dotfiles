@@ -109,10 +109,14 @@ export PATH="$HOME/bin:$PATH"
 export PATH="$PATH:$HOME/.local/bin"
 
 # Add Neovim to path
-export PATH="/opt/nvim/bin:$PATH"
+export PATH="$HOME/personal/nvim-linux64/bin:$PATH"
 
 # Add dotnet tools to path
 export PATH="$HOME/.dotnet/tools:$PATH"
+
+# Add go to path
+export PATH="/usr/local/go/bin:$PATH"
+export PATH="$HOME/go/bin:$PATH"
 
 # Activate mise (if found)
 if command -v mise &> /dev/null; then
