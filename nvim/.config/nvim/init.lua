@@ -17,10 +17,11 @@ vim.o.smartcase = true
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.undofile = true
+vim.o.winborder = "╭,─,╮,│,╯,─,╰,│"
+vim.o.pumborder = "╭,─,╮,│,╯,─,╰,│"
 -- vim.o.list = true                                           -- sets characters to represent whitespaces
 -- vim.o.listchars = 'trail:·,tab:–»,nbsp:␣,extends:»,eol: ,precedes:«,multispace: '
 vim.o.wildmode = 'longest:full,full'                        -- sets popupmenu to be whole list
--- vim.o.completeopt='menu,noselect,noinsert,preview'          -- sets completion options to open but not select
 vim.o.completeopt = 'menu,menuone,popup,noinsert,fuzzy'     -- modern completion menu
 vim.o.wildoptions = fuzzy, pum, popup, menuone, preview     -- much of the same but for wildoptions
 
@@ -232,6 +233,10 @@ vim.lsp.config('go_ls', {
 
 vim.lsp.enable({ 'go_ls' })
 
+local border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│", }
+vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = border })
+vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = border })
+
 vim.diagnostic.config({ -- config for diagnostic visuals, sets error sign and indicators
   virtual_text = true,
   signs = {
@@ -283,11 +288,6 @@ vim.keymap.set('v', '<leader>{', 'c{}<Esc>P', { desc = 'surround selection with 
 vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { desc = 'escape terminal insert mode' })
 vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], { desc = 'window navigation from terminal' })
 
--- Autocommands --
--- vim.api.nvim_create_autocmd('BufWritePre', { -- removes trailing space on save
---   pattern = '',
---   command = ":%s/\\s\\+$//e"
--- })
 vim.api.nvim_create_autocmd('LspAttach', { --attach lsp to buffertype
   group = vim.api.nvim_create_augroup('my.lsp', {}),
   callback = function(args)
@@ -310,9 +310,9 @@ vim.api.nvim_create_autocmd('LspAttach', { --attach lsp to buffertype
       })
     end
 
-    -- Key mappings for lsp (when attached to buffer)
+    -- key mappings for lsp (when attached to buffer)
     vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>') -- go to definition
-    -- Global defaults when neovim starts:
+    -- global defaults when neovim starts:
     --     "gra" (Normal and Visual mode) is mapped to vim.lsp.buf.code_action()
     --     "gri" is mapped to vim.lsp.buf.implementation()
     --     "grn" is mapped to vim.lsp.buf.rename()
@@ -328,13 +328,17 @@ vim.api.nvim_create_autocmd('LspAttach', { --attach lsp to buffertype
  -- opens diagnostic popup if cursor sits on a line with lsp diagnostic message for a period of time
 vim.cmd [[autocmd CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]
 
--- Highlight yanked text briefly on yank
+-- highlight yanked text briefly on yank
 vim.api.nvim_create_autocmd('TextYankPost', { callback = function() vim.highlight.on_yank() end })
 
 -- Go specific settings
+-- For treesitter support build and install https://github.com/tree-sitter/tree-sitter-go
+-- also add queries from https://github.com/nvim-treesitter/nvim-treesitter/tree/main/runtime/queries/go/
+-- to $NVIM_ROOT/share/nvim/runtime/queries/go/ to get better highlighting
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "go",
   callback = function()
+    vim.treesitter.start(0, "go")
     vim.opt_local.expandtab = false   -- use real tabs
     vim.opt_local.tabstop = 4         -- tab width
     vim.opt_local.shiftwidth = 4      -- indentation size
@@ -353,3 +357,128 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Custom colorscheme --
+local palette = {
+  bg        = "#f7f7f7",
+  bg_alt    = "#eeeeee",
+  bg_ref    = "#e5e5e5",
+  fg        = "#000000",
+  fg_muted  = "#666666",
+  fg_faint  = "#999999",
+  keyword   = "#007acc", -- blue (control flow only)
+  -- string    = "#aa3731", -- muted red
+  string    = "#448c27",
+  error     = "#b00020",
+  warn      = "#b08900",
+  info      = "#007acc",
+  hint      = "#666666",
+}
+
+local function hl(group, opts)
+  vim.api.nvim_set_hl(0, group, opts)
+end
+
+vim.o.termguicolors = true
+vim.o.background = "light"
+vim.cmd("highlight clear")
+vim.cmd("syntax reset")
+
+-- Core
+hl("Normal",              { fg = palette.fg, bg = palette.bg })
+hl("FloatBorder",         { fg = palette.fg, bg = palette.bg })
+hl("NormalFloat",         { bg = palette.bg })
+hl("LineNr",              { fg = palette.fg_faint })
+hl("CursorLineNr",        { fg = palette.fg })
+hl("CursorLine",          { bg = palette.bg_alt })
+hl("Visual",              { bg = "#e0e0e0" })
+hl("VertSplit",           { fg = "#dddddd" })
+hl("WinSeparator",        { fg = "#dddddd" })
+hl("StatusLine",          { fg = palette.fg, bg = palette.bg_alt })
+hl("StatusLineNC",        { fg = palette.fg_faint, bg = palette.bg_alt })
+hl("Pmenu",               { fg = palette.fg, bg = palette.bg })
+hl("PmenuSel",            { bg = "#dcdcdc" })
+hl("PmenuSbar",           { bg = "#e0e0e0" })
+hl("PmenuThumb",          { bg = "#c0c0c0" })
+hl("PmenuKind",           { fg = palette.fg_faint })
+hl("PmenuKindSel",        { bg = "#dcdcdc" })
+hl("PmenuExtra",          { fg = palette.fg_faint })
+hl("PmenuExtraSel",       { bg = "#dcdcdc" })
+hl("PmenuMatch",          { fg = palette.keyword })
+hl("PmenuMatchSel",       { fg = palette.keyword })
+hl("PmenuBorder",         { fg = palette.fg, bg = palette.bg })
+
+-- LSP diagnostics
+hl("DiagnosticError",     { fg = palette.error })
+hl("DiagnosticWarn",      { fg = palette.warn })
+hl("DiagnosticInfo",      { fg = palette.info })
+hl("DiagnosticHint",      { fg = palette.hint })
+
+-- Underlines instead of backgrounds
+hl("DiagnosticUnderlineError", { undercurl = true, sp = palette.error })
+hl("DiagnosticUnderlineWarn",  { undercurl = true, sp = palette.warn })
+hl("DiagnosticUnderlineInfo",  { undercurl = true, sp = palette.info })
+hl("DiagnosticUnderlineHint",  { undercurl = true, sp = palette.hint })
+
+-- References & code actions
+hl("LspReferenceText",    { fg = palette.fg, bg = palette.bg_alt })
+hl("LspReferenceRead",    { fg = palette.fg, bg = palette.bg_alt })
+hl("LspReferenceWrite",   { fg = palette.fg, bg = palette.bg_alt })
+hl("CodeActionText",      { fg = palette.keyword })
+
+-- Legacy syntax (used when Tree-sitter is unavailable)
+hl("Comment",             { fg = palette.fg_faint })
+hl("Identifier",          { fg = palette.fg })
+hl("Function",            { fg = palette.fg })
+hl("Type",                { fg = palette.fg })
+hl("Statement",           { fg = palette.keyword })
+hl("Keyword",             { fg = palette.keyword })
+hl("Conditional",         { fg = palette.keyword })
+hl("Repeat",              { fg = palette.keyword })
+hl("Operator",            { fg = palette.fg })
+hl("Constant",            { fg = palette.fg })
+hl("String",              { fg = palette.string })
+hl("Number",              { fg = palette.string })
+hl("Boolean",             { fg = palette.string })
+hl("Delimiter",           { fg = palette.fg_muted })
+hl("Special",             { fg = palette.keyword })
+
+-- Comments (TreeSitter)
+hl("@comment",            { fg = palette.fg_faint })
+
+-- Variables (TreeSitter)
+hl("@variable",           { fg = palette.fg })
+hl("@variable.builtin",   { fg = palette.fg })
+
+-- Parameters & fields (TreeSitter)
+hl("@parameter",          { fg = palette.fg })
+hl("@field",              { fg = palette.fg })
+hl("@property",           { fg = palette.fg })
+
+-- Functions (TreeSitter)
+hl("@function",           { fg = palette.fg })
+hl("@function.builtin",   { fg = palette.fg })
+hl("@method",             { fg = palette.fg })
+hl("@constructor",        { fg = palette.fg })
+
+-- Types (TreeSitter)
+hl("@type",               { fg = palette.fg })
+hl("@type.builtin",       { fg = palette.fg })
+hl("@interface",          { fg = palette.fg })
+hl("@struct",             { fg = palette.fg })
+
+-- Keywords (only real control flow) (TreeSitter)
+hl("@keyword",            { fg = palette.keyword })
+hl("@keyword.return",     { fg = palette.keyword })
+hl("@keyword.conditional",{ fg = palette.keyword })
+hl("@keyword.loop",       { fg = palette.keyword })
+
+-- Imports & namespaces (not accentuated) (TreeSitter)
+hl("@namespace",          { fg = palette.fg })
+hl("@include",            { fg = palette.keyword })
+
+-- Literals (TreeSitter)
+hl("@string",             { fg = palette.string })
+hl("@number",             { fg = palette.string })
+hl("@boolean",            { fg = palette.string })
+hl("@enumMember",         { fg = palette.string })
+hl("@constant",           { fg = palette.fg })
