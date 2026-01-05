@@ -23,41 +23,10 @@ vim.o.pumborder = "╭,─,╮,│,╯,─,╰,│"
 -- vim.o.listchars = 'trail:·,tab:–»,nbsp:␣,extends:»,eol: ,precedes:«,multispace: '
 vim.o.wildmode = 'longest:full,full'                        -- sets popupmenu to be whole list
 vim.o.completeopt = 'menu,menuone,popup,noinsert,fuzzy'     -- modern completion menu
-vim.o.wildoptions = fuzzy, pum, popup, menuone, preview     -- much of the same but for wildoptions
-
--- Check for existence of needed tools --
-local fd = vim.fn.executable("fd") == 1 and "fd" or vim.fn.executable("fdfind") == 1 and "fdfind" or nil
-
-if not fd then
-  vim.notify("fd/fdfind not found", vim.log.levels.ERROR)
-end
-
-if vim.fn.executable("fzf") ~= 1 then
-  vim.notify("fzf not found", vim.log.levels.ERROR)
-end
-
-if vim.fn.executable("rg") ~= 1 then
-  vim.notify("rg not found", vim.log.levels.ERROR)
-end
+vim.o.wildoptions = fuzzy, pum                              -- much of the same but for wildoptions
 
 -- Helper funcs --
 local is_windows = package.config:sub(1,1) == "\\"
-
-local function split(s, delimiter)
-  local result = {}
-  local from  = 1
-  local delim_from, delim_to = string.find(s, delimiter, from)
-  while delim_from do
-    table.insert(result, string.sub(s, from , delim_from-1))
-    from  = delim_to + 1
-    delim_from, delim_to = string.find(s, delimiter, from)
-  end
-  table.insert(result, string.sub(s, from))
-  return result
-end
-
--- Reusable terminal --
-local terminals = {}
 
 local function find_window_for_buf(bufnr)
   for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -66,6 +35,29 @@ local function find_window_for_buf(bufnr)
     end
   end
 end
+
+local function debounce(fn, delay)
+  local timer = nil
+
+  return function(...)
+    local args = { ... }
+    if timer then
+      timer:stop()
+      timer:close()
+    end
+
+    timer = vim.loop.new_timer()
+    timer:start(delay, 0, function()
+      timer:stop()
+      timer:close()
+      timer = nil
+      vim.schedule(function() fn(unpack(args)) end)
+    end)
+  end
+end
+
+-- Reusable terminal --
+local terminals = {}
 
 -- open terminal or jump to it if already open
 local function open_terminal(name, opts)
@@ -126,103 +118,105 @@ vim.api.nvim_create_autocmd('TermClose', {
   end,
 })
 
--- Fuzzy finding --
-local function open_split_term(term_cmd, bname, opt)
-  local saved_spk = vim.o.splitkeep
-  local src_winid = vim.fn.win_getid()
-  -- local fzf_lines = (vim.v.count > 2 and vim.v.count) or 10
-  local fzf_lines = 10
-  local tempfile = vim.fn.tempname()
-  local on_exit = function ()
-    vim.cmd.bwipeout()
-    vim.o.splitkeep = saved_spk
-    vim.fn.win_gotoid(src_winid)
-    if vim.fn.filereadable(tempfile) then
-      local lines = vim.fn.readfile(tempfile)
-      if #lines > 0 then (opt.action or vim.cmd.edit)(lines[1]) end
-    end
-    vim.fn.delete(tempfile)
-    if opt.on_exit then opt.on_exit() end
+-- Fuzzy find --
+local filescache = {}
+
+-- find suitable file finder command. falls back to globpath if none find.
+local function find_files_func()
+  if vim.fn.executable("fd") == 1 then
+    return function() return vim.fn.systemlist("fd --type f --follow --hidden --exclude .git") end
+  elseif vim.fn.executable("fdfind") == 1 then
+    return function() return vim.fn.systemlist("fdfind --type f --follow --hidden --exclude .git") end
+  elseif vim.fn.executable("rg") == 1 then
+    return function() return vim.fn.systemlist("rg --files --hidden --glob '!.git'") end
+  elseif not is_windows and vim.fn.executable("find") == 1 then
+    return function() return vim.fn.systemlist("find . -path '*/.git' -prune -o -type f ! -name '.' -print") end
+  else
+    return function() return vim.split(vim.fn.globpath('.', '**', 1), '\n') end
   end
-  vim.o.splitkeep = 'screen'
-  vim.cmd('botright' .. (fzf_lines + 1) .. 'new')
-  -- NOTE: `cwd` can also be specified for the job
-  local id = vim.fn.termopen(term_cmd .. ' > ' .. tempfile, { on_exit = on_exit, env = opt.env, })
-  vim.keymap.set('n', '<esc>', function () vim.fn.jobstop(id) end, {buffer=true})
-  vim.cmd('keepalt file ' .. bname)
-  vim.cmd.startinsert()
 end
+local find_files = find_files_func()
 
-local function fuzzy_find_in_split(input_cmd, bname, opt)
-  local preview = opt.preview or ''
-  local term_cmd = input_cmd .. ' | fzf --no-multi --reverse --preview="' .. preview .. '"' 
-  open_split_term(term_cmd, bname, opt)
+function _G.FindFiles(arg, _)
+  if #filescache == 0 then filescache = find_files() end
+  return #arg == 0 and filescache or vim.fn.matchfuzzy(filescache, arg)
 end
+vim.o.findfunc = "v:lua.FindFiles"
 
-local function fuzzy_find_files()
-  local preview = 'cat {}'
-  if is_windows then
-    preview = 'pwsh -Command Get-Content {}'
-  end
-  -- fzf("find . -path '*/.git' -prune -o -type f ! -name '.' -print", 'fuzzy find', { preview = preview })
-  fuzzy_find_in_split(fd .. " --type f --hidden --exclude .git", 'fuzzy find', { preview = preview })
-end
-
--- XXX: this doesn't work on windows without POSIX shell (reload fails)
-local function fuzzy_grep()
-  local rg_cmd = 'rg --column --line-number --no-heading --smart-case'
-  local term_cmd = table.concat({
-    rg_cmd .. ' ${*:-} |',
-    'fzf',
-    '--disabled',
-    '--bind "change:reload:sleep 0.1; ' .. rg_cmd .. ' {q} || true"',
-    '--delimiter :',
-    '--no-multi',
-    '--reverse'
-  }, " ")
-
-  open_split_term(term_cmd, 'fuzzy grep', {
-      action = function (line)
-        local file, lnum, col = unpack(vim.split(line, ':'))
-        vim.cmd.edit(file)
-        vim.fn.cursor(lnum, col)
-        vim.cmd('normal! zz')
-      end,
-    })
-end
-
-local function fuzzy_find_buffers()
-  local bufstr = string.gsub(vim.fn.execute('ls'), '^\n', '')
-  local bufs = split(bufstr, '\n')
-  local tempfile = vim.fn.tempname()
-  vim.fn.writefile(bufs, tempfile)
-  fuzzy_find_in_split('cat ' .. tempfile, 'fzf buffers', {
-    action = function(line)
-        vim.cmd('b' .. string.match(line, '%d+'))
-    end,
-    on_exit = function()
-        vim.fn.delete(tempfile)
+local find_augroup_id = vim.api.nvim_create_augroup('my.find', { clear = true })
+vim.api.nvim_create_autocmd({ "CmdlineLeave", "CmdlineLeavePre", "CmdlineChanged" }, {
+  group = find_augroup_id,
+  pattern = ":",
+  callback = function(ev)
+    if ev.event == "CmdlineChanged" then
+      if vim.fn.getcmdline():match("^%s*fin[d]?%s") then
+        vim.fn.wildtrigger()
+      end
+    elseif ev.event == "CmdlineLeavePre" then
+      local info = vim.fn.cmdcomplete_info()
+      if info.matches and #info.matches > 0 then
+        if vim.fn.getcmdline():match("^%s*fin[d]?%s") and info.selected == -1 then
+          vim.fn.setcmdline("find " .. info.matches[1])
+        end
+      end
+    elseif ev.event == "CmdlineLeave" then
+      filescache = {}
     end
-  })
+  end,
+})
+
+-- Fuzzy grep --
+local function grep_cmd()
+  if vim.fn.executable("rg") == 1 then
+    return "rg --vimgrep --smart-case --hidden --glob '!.git'"
+  elseif vim.fn.executable("git") == 1 then
+    return 'git grep -n'
+  else
+    return vim.o.grepprg
+  end
 end
+vim.opt.grepprg = grep_cmd()
+
+local live_grep = debounce(function(pattern)
+  vim.cmd("silent grep! " .. vim.fn.escape(pattern, " "))
+  vim.cmd("cwindow")
+  vim.cmd.redraw()
+end, 200)
+
+-- dummy command for swallowing an error
+vim.api.nvim_create_user_command('Lgrep', function() end, { nargs = '*', })
+
+-- [:grep with live updating quickfix list : r/neovim](https://www.reddit.com/r/neovim/comments/1n2ln9w/grep_with_live_updating_quickfix_list/)
+local grep_augroup_id = vim.api.nvim_create_augroup('my.grep', { clear = true })
+vim.api.nvim_create_autocmd("CmdlineChanged", {
+  group = grep_augroup_id,
+  callback = function()
+    local cmdline = vim.fn.getcmdline()
+    local words = vim.split(cmdline, " ", { trimempty = true })
+    if words[1] == "Lgrep" and #words > 1 then
+      live_grep(words[2])
+    end
+  end,
+  pattern = ":",
+})
 
 -- Quickfix list --
-local function show_arglist_in_qf()
-  vim.cmd.argdedupe()
-  local list = vim.fn.argv()
-  if #list > 0 then
-    local qf_items = {}
-    for _, filename in ipairs(list) do
-      table.insert(qf_items, {
-        filename = filename,
-        lnum = 1,
-        text = filename
-      })
-    end
-    vim.fn.setqflist(qf_items, 'r')
-    vim.cmd.copen()
-  end
-end
+-- local function show_arglist_in_qf()
+--   vim.cmd.argdedupe()
+--   local list = vim.fn.argv()
+--   if #list > 0 then
+--     local qf_items = {}
+--     for _, filename in ipairs(list) do
+--       table.insert(qf_items, {
+--         filename = filename,
+--         lnum = 1,
+--         text = filename
+--       })
+--     end
+--     vim.fn.setqflist(qf_items, 'r')
+--     vim.cmd.copen()
+--   end
+-- end
 
 -- LSP --
 vim.lsp.config('go_ls', {
@@ -237,7 +231,7 @@ local border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│", }
 vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = border })
 vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = border })
 
-vim.diagnostic.config({ -- config for diagnostic visuals, sets error sign and indicators
+vim.diagnostic.config({
   virtual_text = true,
   signs = {
     text = {
@@ -265,15 +259,14 @@ vim.keymap.set('n', '<leader>a', function() toggle_or_jump_terminal('terminal') 
 vim.keymap.set('n', '<leader>A', function() toggle_or_jump_terminal('terminal', { vertical = true }) end, { desc = 'toggle terminal in vertical split' })
 vim.keymap.set('n', '<C-j>', ':m .+1<CR>==', { desc = 'move current line down fixing indent' })
 vim.keymap.set('n', '<C-k>', ':m .-2<CR>==', { desc = 'move current line up fixing indent' })
-vim.keymap.set('n', '<leader>f', fuzzy_find_files, { desc = 'fuzzy find file(s)' })
-vim.keymap.set('n', '<leader>g', fuzzy_grep, { desc = 'fuzzy grep in file(s)' })
-vim.keymap.set('n', '<leader><space>', fuzzy_find_buffers, { desc = 'fuzzy find buffer' })
-for i = 1,4 do -- mini harpoon with arglist
-  vim.keymap.set('n', '<leader>'..i, '<cmd>argu '..i..'<CR>', { silent = true, desc = 'Go to arg '..i })
-  vim.keymap.set('n', '<leader>h'..i, '<cmd>'..(i-1)..'arga<CR>', { silent = true, desc = 'Add current file to arg '..i })
-  vim.keymap.set('n', '<leader>H'..i, '<cmd>'..i..'argd<CR>', { silent = true, desc = 'Remove current arg '..i })
-end
-vim.keymap.set('n', '<leader>hq', show_arglist_in_qf, { silent = true, desc = "Show args in qf" })
+vim.keymap.set('n', '<leader>f', ':find ', { desc = 'find files' })
+vim.keymap.set('n', '<leader>g', ':Lgrep ', { desc = 'live grep' })
+-- for i = 1,4 do -- mini harpoon with arglist
+--   vim.keymap.set('n', '<leader>'..i, '<cmd>argu '..i..'<CR>', { silent = true, desc = 'Go to arg '..i })
+--   vim.keymap.set('n', '<leader>h'..i, '<cmd>'..(i-1)..'arga<CR>', { silent = true, desc = 'Add current file to arg '..i })
+--   vim.keymap.set('n', '<leader>H'..i, '<cmd>'..i..'argd<CR>', { silent = true, desc = 'Remove current arg '..i })
+-- end
+-- vim.keymap.set('n', '<leader>hq', show_arglist_in_qf, { silent = true, desc = "Show args in qf" })
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.open_float()<CR>')
 vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
 
@@ -288,7 +281,7 @@ vim.keymap.set('v', '<leader>{', 'c{}<Esc>P', { desc = 'surround selection with 
 vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { desc = 'escape terminal insert mode' })
 vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], { desc = 'window navigation from terminal' })
 
-vim.api.nvim_create_autocmd('LspAttach', { --attach lsp to buffertype
+vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('my.lsp', {}),
   callback = function(args)
     local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
@@ -366,8 +359,8 @@ local palette = {
   fg_muted  = "#666666",
   fg_faint  = "#999999",
   keyword   = "#007acc", -- blue (control flow only)
-  -- string    = "#aa3731", -- muted red
-  string    = "#448c27",
+  string    = "#aa3731", -- muted red
+  -- string    = "#448c27",
   error     = "#b00020",
   warn      = "#b08900",
   info      = "#007acc",
