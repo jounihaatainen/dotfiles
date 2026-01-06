@@ -1,14 +1,25 @@
--- Options --
-vim.o.number = true                                         -- sets number in signcolumn
+------------------------------------------------------------------------------
+-- Quite minimal nvim configuration
+--
+-- No other plugins than nvim-treesitter
+--
+-- Requirements:
+--   * cargo (for installing treesitter-cli)
+--   * tree-sitter-cli (for nvim-treesitter: cargo install --locked tree-sitter-cli)
+--   * gopls (for go lsp)
+------------------------------------------------------------------------------
+
+-- Options -------------------------------------------------------------------
+vim.o.number = true
 vim.o.relativenumber = true
 vim.o.signcolumn = 'yes:1'
 vim.o.wrap = false
-vim.o.expandtab = true                                      -- use 4 spaces to indent  
+vim.o.expandtab = true
 vim.o.tabstop = 4
 vim.o.shiftwidth = 4
 vim.o.softtabstop = -1
 vim.o.smartindent = true
-vim.g.mapleader = ' '                                       -- sets <leader> to space
+vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.o.scrolloff = 4
 vim.o.sidescrolloff = 4
@@ -18,14 +29,17 @@ vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.undofile = true
 vim.o.winborder = "╭,─,╮,│,╯,─,╰,│"
-vim.o.pumborder = "╭,─,╮,│,╯,─,╰,│"
--- vim.o.list = true                                           -- sets characters to represent whitespaces
--- vim.o.listchars = 'trail:·,tab:–»,nbsp:␣,extends:»,eol: ,precedes:«,multispace: '
-vim.o.wildmode = 'longest:full,full'                        -- sets popupmenu to be whole list
-vim.o.completeopt = 'menu,menuone,popup,noinsert,fuzzy'     -- modern completion menu
-vim.o.wildoptions = fuzzy, pum                              -- much of the same but for wildoptions
+vim.o.pumborder = vim.o.winborder
+vim.o.list = true
+vim.o.listchars = 'trail:·,nbsp:␣'
+vim.o.wildmode = 'longest:full,full'
+vim.o.completeopt = 'menu,menuone,popup,noinsert,fuzzy'
+vim.o.wildoptions = fuzzy, pum
 
--- Helper funcs --
+-- highlight yanked text briefly on yank
+vim.api.nvim_create_autocmd('TextYankPost', { callback = function() vim.highlight.on_yank() end })
+
+-- Helper funcs --------------------------------------------------------------
 local is_windows = package.config:sub(1,1) == "\\"
 
 local function find_window_for_buf(bufnr)
@@ -56,7 +70,7 @@ local function debounce(fn, delay)
   end
 end
 
--- Reusable terminal --
+-- Reusable terminal ---------------------------------------------------------
 local terminals = {}
 
 -- open terminal or jump to it if already open
@@ -118,10 +132,9 @@ vim.api.nvim_create_autocmd('TermClose', {
   end,
 })
 
--- Fuzzy find --
-local filescache = {}
+-- Fuzzy find ----------------------------------------------------------------
 
--- find suitable file finder command. falls back to globpath if none find.
+-- find suitable file finder command. falls back to globpath() if none find.
 local function find_files_func()
   if vim.fn.executable("fd") == 1 then
     return function() return vim.fn.systemlist("fd --type f --follow --hidden --exclude .git") end
@@ -136,6 +149,8 @@ local function find_files_func()
   end
 end
 local find_files = find_files_func()
+
+local filescache = {}
 
 function _G.FindFiles(arg, _)
   if #filescache == 0 then filescache = find_files() end
@@ -165,7 +180,7 @@ vim.api.nvim_create_autocmd({ "CmdlineLeave", "CmdlineLeavePre", "CmdlineChanged
   end,
 })
 
--- Fuzzy grep --
+-- Fuzzy grep ----------------------------------------------------------------
 local function grep_cmd()
   if vim.fn.executable("rg") == 1 then
     return "rg --vimgrep --smart-case --hidden --glob '!.git'"
@@ -183,7 +198,7 @@ local live_grep = debounce(function(pattern)
   vim.cmd.redraw()
 end, 200)
 
--- dummy command for swallowing an error
+-- dummy command for swallowing an error if :Lgrep gets executed
 vim.api.nvim_create_user_command('Lgrep', function() end, { nargs = '*', })
 
 -- [:grep with live updating quickfix list : r/neovim](https://www.reddit.com/r/neovim/comments/1n2ln9w/grep_with_live_updating_quickfix_list/)
@@ -193,32 +208,36 @@ vim.api.nvim_create_autocmd("CmdlineChanged", {
   callback = function()
     local cmdline = vim.fn.getcmdline()
     local words = vim.split(cmdline, " ", { trimempty = true })
-    if words[1] == "Lgrep" and #words > 1 then
-      live_grep(words[2])
+    local pattern = unpack(words, 2)
+    if words[1] == "Lgrep" and #words > 1 and #pattern > 1 then
+      live_grep(pattern)
     end
   end,
   pattern = ":",
 })
 
--- Quickfix list --
--- local function show_arglist_in_qf()
---   vim.cmd.argdedupe()
---   local list = vim.fn.argv()
---   if #list > 0 then
---     local qf_items = {}
---     for _, filename in ipairs(list) do
---       table.insert(qf_items, {
---         filename = filename,
---         lnum = 1,
---         text = filename
---       })
---     end
---     vim.fn.setqflist(qf_items, 'r')
---     vim.cmd.copen()
---   end
--- end
+-- Plugins -------------------------------------------------------------------
+vim.pack.add({
+  { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
+})
 
--- LSP --
+-- Treesitter ----------------------------------------------------------------
+local nts = require('nvim-treesitter')
+nts.install({ 'bash', 'css', 'go', 'gomod', 'gosum', 'html', 'javascript' })
+local ts_augroup_id = vim.api.nvim_create_augroup('my.treesitter', { clear = true })
+vim.api.nvim_create_autocmd('PackChanged', { group = ts_augroup_id, callback = function() nts.update() end })
+vim.api.nvim_create_autocmd("FileType", {
+  group = ts_augroup_id,
+  callback = function(args)
+    local filetype = args.match
+    local lang = vim.treesitter.language.get_lang(filetype)
+    if vim.treesitter.language.add(lang) then
+      vim.treesitter.start()
+    end
+  end
+})
+
+-- LSP -----------------------------------------------------------------------
 vim.lsp.config('go_ls', {
   cmd = { 'gopls' },
   root_markers = { 'go.work', 'go.mod', '.git' },
@@ -227,59 +246,9 @@ vim.lsp.config('go_ls', {
 
 vim.lsp.enable({ 'go_ls' })
 
-local border = { "╭", "─", "╮", "│", "╯", "─", "╰", "│", }
+local border = vim.split(vim.o.winborder, ",")
 vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = border })
 vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = border })
-
-vim.diagnostic.config({
-  virtual_text = true,
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = '!',
-      [vim.diagnostic.severity.WARN] = '*',
-      [vim.diagnostic.severity.HINT] = '?',
-      [vim.diagnostic.severity.INFO] = '#',
-    },
-    numhl = {
-      [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
-      [vim.diagnostic.severity.WARN] = 'WarningMsg',
-      [vim.diagnostic.severity.HINT] = 'HintMsg',
-      [vim.diagnostic.severity.INFO] = 'InfoMsg',
-    },
-  },
-  update_in_insert = true,
-})
-
--- Keymaps --
-vim.keymap.set('i', 'kj', '<Esc>', { desc = 'escape insert mode with kj' })
-vim.keymap.set('i', '<C-space>', '<C-x><C-o>', { desc = 'lsp/filetype autocompletion (does not work in windows terminal)' })
-
-vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'remove highlight after search on esc' })
-vim.keymap.set('n', '<leader>a', function() toggle_or_jump_terminal('terminal') end, { desc = 'toggle terminal in horizontal split' })
-vim.keymap.set('n', '<leader>A', function() toggle_or_jump_terminal('terminal', { vertical = true }) end, { desc = 'toggle terminal in vertical split' })
-vim.keymap.set('n', '<C-j>', ':m .+1<CR>==', { desc = 'move current line down fixing indent' })
-vim.keymap.set('n', '<C-k>', ':m .-2<CR>==', { desc = 'move current line up fixing indent' })
-vim.keymap.set('n', '<leader>f', ':find ', { desc = 'find files' })
-vim.keymap.set('n', '<leader>g', ':Lgrep ', { desc = 'live grep' })
--- for i = 1,4 do -- mini harpoon with arglist
---   vim.keymap.set('n', '<leader>'..i, '<cmd>argu '..i..'<CR>', { silent = true, desc = 'Go to arg '..i })
---   vim.keymap.set('n', '<leader>h'..i, '<cmd>'..(i-1)..'arga<CR>', { silent = true, desc = 'Add current file to arg '..i })
---   vim.keymap.set('n', '<leader>H'..i, '<cmd>'..i..'argd<CR>', { silent = true, desc = 'Remove current arg '..i })
--- end
--- vim.keymap.set('n', '<leader>hq', show_arglist_in_qf, { silent = true, desc = "Show args in qf" })
-vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.open_float()<CR>')
-vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
-
-vim.keymap.set('v', '<C-j>', ":m'>+<CR>gv=gv", { desc ='move selected lines up, fixing indent' })
-vim.keymap.set('v', '<C-k>', ':m-2<CR>gv=gv', { desc = 'move selected lines down, fixing indent' })
-vim.keymap.set('v', "<leader>'", "c''<Esc>P", { desc = "surround selection with '" })
-vim.keymap.set('v', '<leader>"', 'c""<Esc>P', { desc = 'surround selection with "' })
-vim.keymap.set('v', '<leader>(', 'c()<Esc>P', { desc = 'surround selection with ()' })
-vim.keymap.set('v', '<leader>[', 'c[]<Esc>P', { desc = 'surround selection with []' })
-vim.keymap.set('v', '<leader>{', 'c{}<Esc>P', { desc = 'surround selection with {}' })
-
-vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { desc = 'escape terminal insert mode' })
-vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], { desc = 'window navigation from terminal' })
 
 vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('my.lsp', {}),
@@ -305,33 +274,68 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
     -- key mappings for lsp (when attached to buffer)
     vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>') -- go to definition
-    -- global defaults when neovim starts:
-    --     "gra" (Normal and Visual mode) is mapped to vim.lsp.buf.code_action()
-    --     "gri" is mapped to vim.lsp.buf.implementation()
-    --     "grn" is mapped to vim.lsp.buf.rename()
-    --     "grr" is mapped to vim.lsp.buf.references()
-    --     "grt" is mapped to vim.lsp.buf.type_definition()
-    --     "gO" is mapped to vim.lsp.buf.document_symbol()
-    --     CTRL-S (Insert mode) is mapped to vim.lsp.buf.signature_help()
-    --     "an" and "in" (Visual and Operator-pending mode) are mapped to outer and inner
-    --                   incremental selections, respectively, using vim.lsp.buf.selection_range() 
   end,
+})
+
+-- Diagnostics ---------------------------------------------------------------
+vim.diagnostic.config({
+  virtual_text = true,
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = '!',
+      [vim.diagnostic.severity.WARN] = '*',
+      [vim.diagnostic.severity.HINT] = '?',
+      [vim.diagnostic.severity.INFO] = '#',
+    },
+    numhl = {
+      [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
+      [vim.diagnostic.severity.WARN] = 'WarningMsg',
+      [vim.diagnostic.severity.HINT] = 'HintMsg',
+      [vim.diagnostic.severity.INFO] = 'InfoMsg',
+    },
+  },
+  update_in_insert = true,
 })
 
  -- opens diagnostic popup if cursor sits on a line with lsp diagnostic message for a period of time
 vim.cmd [[autocmd CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]
 
--- highlight yanked text briefly on yank
-vim.api.nvim_create_autocmd('TextYankPost', { callback = function() vim.highlight.on_yank() end })
+-- Keymaps -------------------------------------------------------------------
+vim.keymap.set('i', 'kj', '<Esc>', { desc = 'escape insert mode with kj' })
+vim.keymap.set('i', '<C-space>', '<C-x><C-o>', { desc = 'lsp/filetype autocompletion (does not work in windows terminal)' })
 
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'remove highlight after search on esc' })
+vim.keymap.set('n', '<C-j>', ':m .+1<CR>==', { desc = 'move current line down fixing indent' })
+vim.keymap.set('n', '<C-k>', ':m .-2<CR>==', { desc = 'move current line up fixing indent' })
+vim.keymap.set('n', '<leader>a', function() toggle_or_jump_terminal('terminal') end, { desc = 'toggle terminal in horizontal split' })
+vim.keymap.set('n', '<leader>A', function() toggle_or_jump_terminal('terminal', { vertical = true }) end, { desc = 'toggle terminal in vertical split' })
+vim.keymap.set('n', '<leader>f', ':find ', { desc = 'find files' })
+vim.keymap.set('n', '<leader>g', ':Lgrep ', { desc = 'live grep' })
+vim.keymap.set('n', '<leader>v', ':vimgrep // **<left><left><left><left>', { desc = 'vim grep' })
+vim.keymap.set('n', '<leader>V', ':vimgrep //f **<left><left><left><left><left>', { desc = 'fuzzy vim grep' })
+vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.open_float()<CR>')
+vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
+vim.keymap.set('n', '<leader>j', '<cmd>cnext<CR>zz', { desc = "Forward quick fix list" })
+vim.keymap.set('n', '<leader>k', '<cmd>cprev<CR>zz', { desc = "Backward quick fix list" })
+vim.keymap.set('n', '<leader>q', '<cmd>copen<CR>', { desc = "Open quick fix list" })
+vim.keymap.set('n', '<leader>Q', '<cmd>cclose<CR>', { desc = "Close quick fix list" })
+
+vim.keymap.set('v', '<C-j>', ":m'>+<CR>gv=gv", { desc ='move selected lines up, fixing indent' })
+vim.keymap.set('v', '<C-k>', ':m-2<CR>gv=gv', { desc = 'move selected lines down, fixing indent' })
+vim.keymap.set('v', "<leader>'", "c''<Esc>P", { desc = "surround selection with '" })
+vim.keymap.set('v', '<leader>"', 'c""<Esc>P', { desc = 'surround selection with "' })
+vim.keymap.set('v', '<leader>(', 'c()<Esc>P', { desc = 'surround selection with ()' })
+vim.keymap.set('v', '<leader>[', 'c[]<Esc>P', { desc = 'surround selection with []' })
+vim.keymap.set('v', '<leader>{', 'c{}<Esc>P', { desc = 'surround selection with {}' })
+
+vim.keymap.set('t', '<Esc><Esc>', [[<C-\><C-n>]], { desc = 'escape terminal insert mode' })
+vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], { desc = 'window navigation from terminal' })
+
+-- Filetype specific settings ------------------------------------------------
 -- Go specific settings
--- For treesitter support build and install https://github.com/tree-sitter/tree-sitter-go
--- also add queries from https://github.com/nvim-treesitter/nvim-treesitter/tree/main/runtime/queries/go/
--- to $NVIM_ROOT/share/nvim/runtime/queries/go/ to get better highlighting
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "go",
   callback = function()
-    vim.treesitter.start(0, "go")
     vim.opt_local.expandtab = false   -- use real tabs
     vim.opt_local.tabstop = 4         -- tab width
     vim.opt_local.shiftwidth = 4      -- indentation size
@@ -350,7 +354,7 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- Custom colorscheme --
+-- Custom colorscheme --------------------------------------------------------
 local palette = {
   bg        = "#f7f7f7",
   bg_alt    = "#eeeeee",
