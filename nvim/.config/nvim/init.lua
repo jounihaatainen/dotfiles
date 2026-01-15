@@ -36,6 +36,9 @@ vim.o.wildmode = 'longest:full,full'
 vim.o.completeopt = 'menu,menuone,popup,noinsert,fuzzy'
 vim.o.wildoptions = fuzzy, pum
 
+vim.g.netrw_banner = 0
+vim.g.netrw_liststyle = 3
+
 -- highlight yanked text briefly on yank
 vim.api.nvim_create_autocmd('TextYankPost', { callback = function() vim.highlight.on_yank() end })
 
@@ -73,41 +76,26 @@ end
 -- Reusable terminal ---------------------------------------------------------
 local terminals = {}
 
--- open terminal or jump to it if already open
 local function open_terminal(name, opts)
   opts = opts or {}
   local term = terminals[name]
 
-  if term and term.bufnr and vim.api.nvim_buf_is_valid(term.bufnr) then
-    local win = find_window_for_buf(term.bufnr)
-    if win then
-      vim.api.nvim_set_current_win(win)
-      vim.cmd('startinsert')
-      return
-    end
-  end
-
-  if opts.vertical then
-      vim.cmd('vsplit')
-      vim.cmd('vertical resize ' .. (opts.width or 80))
-  else
-    vim.cmd('split')
-    vim.cmd('resize ' .. (opts.height or 15))
-  end
+  vim.cmd('split')
+  vim.cmd('resize ' .. ((opts.height or 0) ~= 0 and opts.height or 15))
 
   if term and term.bufnr and vim.api.nvim_buf_is_valid(term.bufnr) then
     vim.api.nvim_set_current_buf(term.bufnr)
   else
     vim.cmd('terminal')
     vim.cmd('keepalt file ' .. name)
-    terminals[name] = { bufnr = vim.api.nvim_get_current_buf() }
+    terminals[name] = { bufnr = vim.api.nvim_get_current_buf(), opts = opts }
   end
 
   vim.cmd('startinsert')
 end
 
--- open or jump to terminal if not open, close it if open
-local function toggle_or_jump_terminal(name, opts)
+-- open if not open, close it if open
+local function toggle_terminal(name, opts)
   opts = opts or {}
   local term = terminals[name]
   if term and term.bufnr then
@@ -180,7 +168,7 @@ vim.api.nvim_create_autocmd({ "CmdlineLeave", "CmdlineLeavePre", "CmdlineChanged
   end,
 })
 
--- Fuzzy grep ----------------------------------------------------------------
+-- Live grep ----------------------------------------------------------------
 local function grep_cmd()
   if vim.fn.executable("rg") == 1 then
     return "rg --vimgrep --smart-case --hidden --glob '!.git'"
@@ -208,13 +196,27 @@ vim.api.nvim_create_autocmd("CmdlineChanged", {
   callback = function()
     local cmdline = vim.fn.getcmdline()
     local words = vim.split(cmdline, " ", { trimempty = true })
-    local pattern = unpack(words, 2)
-    if words[1] == "Lgrep" and #words > 1 and #pattern > 1 then
+    -- local pattern = unpack(words, 2, #words)
+    -- if words[1] == "Lgrep" and #words > 1 and #pattern > 1 then
+    if words[1] == "Lgrep" and #words > 1 then
+      local pattern = words[2]
+      for i = 3, #words, 1 do
+        pattern = pattern .. " " .. words[i]
+      end
       live_grep(pattern)
     end
   end,
   pattern = ":",
 })
+
+-- Quick fix list ------------------------------------------------------------
+local function toggle_qflist()
+  if vim.fn.getqflist({ winid = 0 }).winid ~= 0 then
+    vim.cmd('cclose')
+  else
+    vim.cmd('copen')
+  end
+end
 
 -- Plugins -------------------------------------------------------------------
 vim.pack.add({
@@ -280,21 +282,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 -- Diagnostics ---------------------------------------------------------------
 vim.diagnostic.config({
   virtual_text = true,
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = '!',
-      [vim.diagnostic.severity.WARN] = '*',
-      [vim.diagnostic.severity.HINT] = '?',
-      [vim.diagnostic.severity.INFO] = '#',
-    },
-    numhl = {
-      [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
-      [vim.diagnostic.severity.WARN] = 'WarningMsg',
-      [vim.diagnostic.severity.HINT] = 'HintMsg',
-      [vim.diagnostic.severity.INFO] = 'InfoMsg',
-    },
-  },
-  update_in_insert = true,
+  -- update_in_insert = true,
 })
 
  -- opens diagnostic popup if cursor sits on a line with lsp diagnostic message for a period of time
@@ -307,21 +295,24 @@ vim.keymap.set('i', '<C-space>', '<C-x><C-o>', { desc = 'lsp/filetype autocomple
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'remove highlight after search on esc' })
 vim.keymap.set('n', '<C-j>', ':m .+1<CR>==', { desc = 'move current line down fixing indent' })
 vim.keymap.set('n', '<C-k>', ':m .-2<CR>==', { desc = 'move current line up fixing indent' })
-vim.keymap.set('n', '<leader>a', function() toggle_or_jump_terminal('terminal') end, { desc = 'toggle terminal in horizontal split' })
-vim.keymap.set('n', '<leader>A', function() toggle_or_jump_terminal('terminal', { vertical = true }) end, { desc = 'toggle terminal in vertical split' })
+vim.keymap.set('n', '<leader>t', function() toggle_terminal('terminal', { height = vim.v.count }) end, { desc = 'toggle terminal in horizontal split' })
+vim.keymap.set('n', '<leader>e', '<cmd>25Lexplore<CR>', { desc = 'toggle explorer on the left side' })
 vim.keymap.set('n', '<leader>f', ':find ', { desc = 'find files' })
 vim.keymap.set('n', '<leader>g', ':Lgrep ', { desc = 'live grep' })
-vim.keymap.set('n', '<leader>v', ':vimgrep // **<left><left><left><left>', { desc = 'vim grep' })
-vim.keymap.set('n', '<leader>V', ':vimgrep //f **<left><left><left><left><left>', { desc = 'fuzzy vim grep' })
+vim.keymap.set('n', '<leader>G', ':Lgrep <C-r><C-w>', { desc = 'live grep starting with word under cursor' })
+vim.keymap.set('n', '<leader>v', ':vimgrep //j ** | copen<S-Left><S-Left><S-Left><S-Left><Right>', { desc = 'vim grep' })
+vim.keymap.set('n', '<leader>V', ':vimgrep /<C-r><C-w>/j ** | copen<S-Left><S-Left><S-Left><Left><Left><Left>', { desc = 'vim grep word under cursor' })
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.open_float()<CR>')
-vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
+-- vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
+vim.keymap.set('n', '<leader>d', '<cmd>lua vim.diagnostic.setqflist()<CR>')
 vim.keymap.set('n', '<leader>j', '<cmd>cnext<CR>zz', { desc = "Forward quick fix list" })
 vim.keymap.set('n', '<leader>k', '<cmd>cprev<CR>zz', { desc = "Backward quick fix list" })
-vim.keymap.set('n', '<leader>q', '<cmd>copen<CR>', { desc = "Open quick fix list" })
-vim.keymap.set('n', '<leader>Q', '<cmd>cclose<CR>', { desc = "Close quick fix list" })
+vim.keymap.set('n', '<leader>q', toggle_qflist, { desc = "Toggle quick fix list" })
 
 vim.keymap.set('v', '<C-j>', ":m'>+<CR>gv=gv", { desc ='move selected lines up, fixing indent' })
 vim.keymap.set('v', '<C-k>', ':m-2<CR>gv=gv', { desc = 'move selected lines down, fixing indent' })
+vim.keymap.set('v', '<', '<gv', { desc = 'deindent selected lines and keep the selection' })
+vim.keymap.set('v', '>', '>gv', { desc = 'indent selected lines and keep the selection' })
 vim.keymap.set('v', "<leader>'", "c''<Esc>P", { desc = "surround selection with '" })
 vim.keymap.set('v', '<leader>"', 'c""<Esc>P', { desc = 'surround selection with "' })
 vim.keymap.set('v', '<leader>(', 'c()<Esc>P', { desc = 'surround selection with ()' })
