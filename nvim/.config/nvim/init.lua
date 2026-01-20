@@ -1,13 +1,21 @@
 ------------------------------------------------------------------------------
--- Quite minimal nvim configuration
+-- Quite minimal nvim configuration for Neovim 0.12+
 --
--- No other plugins than nvim-treesitter
+-- No other plugins than nvim-treesitter (and that's optional too).
 --
--- Requirements:
+-- Requirements for tree-sitter support:
 --   * cargo (for installing treesitter-cli)
 --   * tree-sitter-cli (for nvim-treesitter: cargo install --locked tree-sitter-cli)
+--
+--Requirements for LSP:
 --   * gopls (for go lsp)
+--
 ------------------------------------------------------------------------------
+
+-- Optional tree-sitter support ----------------------------------------------
+-- activated if tree-sitter cli is present
+local use_treesitter = false
+if vim.fn.executable("tree-sitter") == 1 then use_treesitter = true end
 
 -- Options -------------------------------------------------------------------
 vim.o.number = true
@@ -218,26 +226,27 @@ local function toggle_qflist()
   end
 end
 
--- Plugins -------------------------------------------------------------------
-vim.pack.add({
-  { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
-})
-
 -- Treesitter ----------------------------------------------------------------
-local nts = require('nvim-treesitter')
-nts.install({ 'bash', 'css', 'go', 'gomod', 'gosum', 'html', 'javascript' })
-local ts_augroup_id = vim.api.nvim_create_augroup('my.treesitter', { clear = true })
-vim.api.nvim_create_autocmd('PackChanged', { group = ts_augroup_id, callback = function() nts.update() end })
-vim.api.nvim_create_autocmd("FileType", {
-  group = ts_augroup_id,
-  callback = function(args)
-    local filetype = args.match
-    local lang = vim.treesitter.language.get_lang(filetype)
-    if vim.treesitter.language.add(lang) then
-      vim.treesitter.start()
+if use_treesitter then
+  vim.pack.add({
+    { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
+  })
+
+  local nts = require('nvim-treesitter')
+  nts.install({ 'bash', 'css', 'go', 'gomod', 'gosum', 'html', 'javascript' })
+  local ts_augroup_id = vim.api.nvim_create_augroup('my.treesitter', { clear = true })
+  vim.api.nvim_create_autocmd('PackChanged', { group = ts_augroup_id, callback = function() nts.update() end })
+  vim.api.nvim_create_autocmd("FileType", {
+    group = ts_augroup_id,
+    callback = function(args)
+      local filetype = args.match
+      local lang = vim.treesitter.language.get_lang(filetype)
+      if vim.treesitter.language.add(lang) then
+        vim.treesitter.start()
+      end
     end
-  end
-})
+  })
+end
 
 -- LSP -----------------------------------------------------------------------
 vim.lsp.config('go_ls', {
@@ -430,43 +439,45 @@ hl("Boolean",             { fg = palette.string })
 hl("Delimiter",           { fg = palette.fg_muted })
 hl("Special",             { fg = palette.keyword })
 
--- Comments (TreeSitter)
-hl("@comment",            { fg = palette.fg_faint })
+if use_treesitter then
+  -- Comments (TreeSitter)
+  hl("@comment",            { fg = palette.fg_faint })
 
--- Variables (TreeSitter)
-hl("@variable",           { fg = palette.fg })
-hl("@variable.builtin",   { fg = palette.fg })
+  -- Variables (TreeSitter)
+  hl("@variable",           { fg = palette.fg })
+  hl("@variable.builtin",   { fg = palette.fg })
 
--- Parameters & fields (TreeSitter)
-hl("@parameter",          { fg = palette.fg })
-hl("@field",              { fg = palette.fg })
-hl("@property",           { fg = palette.fg })
+  -- Parameters & fields (TreeSitter)
+  hl("@parameter",          { fg = palette.fg })
+  hl("@field",              { fg = palette.fg })
+  hl("@property",           { fg = palette.fg })
 
--- Functions (TreeSitter)
-hl("@function",           { fg = palette.fg })
-hl("@function.builtin",   { fg = palette.fg })
-hl("@method",             { fg = palette.fg })
-hl("@constructor",        { fg = palette.fg })
+  -- Functions (TreeSitter)
+  hl("@function",           { fg = palette.fg })
+  hl("@function.builtin",   { fg = palette.fg })
+  hl("@method",             { fg = palette.fg })
+  hl("@constructor",        { fg = palette.fg })
 
--- Types (TreeSitter)
-hl("@type",               { fg = palette.fg })
-hl("@type.builtin",       { fg = palette.fg })
-hl("@interface",          { fg = palette.fg })
-hl("@struct",             { fg = palette.fg })
+  -- Types (TreeSitter)
+  hl("@type",               { fg = palette.fg })
+  hl("@type.builtin",       { fg = palette.fg })
+  hl("@interface",          { fg = palette.fg })
+  hl("@struct",             { fg = palette.fg })
 
--- Keywords (only real control flow) (TreeSitter)
-hl("@keyword",            { fg = palette.keyword })
-hl("@keyword.return",     { fg = palette.keyword })
-hl("@keyword.conditional",{ fg = palette.keyword })
-hl("@keyword.loop",       { fg = palette.keyword })
+  -- Keywords (only real control flow) (TreeSitter)
+  hl("@keyword",            { fg = palette.keyword })
+  hl("@keyword.return",     { fg = palette.keyword })
+  hl("@keyword.conditional",{ fg = palette.keyword })
+  hl("@keyword.loop",       { fg = palette.keyword })
 
--- Imports & namespaces (not accentuated) (TreeSitter)
-hl("@namespace",          { fg = palette.fg })
-hl("@include",            { fg = palette.keyword })
+  -- Imports & namespaces (not accentuated) (TreeSitter)
+  hl("@namespace",          { fg = palette.fg })
+  hl("@include",            { fg = palette.keyword })
 
--- Literals (TreeSitter)
-hl("@string",             { fg = palette.string })
-hl("@number",             { fg = palette.string })
-hl("@boolean",            { fg = palette.string })
-hl("@enumMember",         { fg = palette.string })
-hl("@constant",           { fg = palette.fg })
+  -- Literals (TreeSitter)
+  hl("@string",             { fg = palette.string })
+  hl("@number",             { fg = palette.string })
+  hl("@boolean",            { fg = palette.string })
+  hl("@enumMember",         { fg = palette.string })
+  hl("@constant",           { fg = palette.fg })
+end
