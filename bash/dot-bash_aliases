@@ -8,13 +8,15 @@ if [ -x /usr/bin/dircolors ]; then
 fi
 
 # Use eza as ls if it exists
-if [ -x /usr/bin/eza ]; then
+if command -v eza >/dev/null 2>&1; then
     alias ls='eza -lh --group-directories-first --icons=auto'
 fi
 
 # Alias fdfind to fd
-if [ ! -x /usr/bin/fd ] && [ -x /usr/bin/fdfind ]; then
-    alias fd=fdfind
+if ! command -v fd >/dev/null 2>&1; then
+    if command -v fdfind >/dev/null 2>&1; then
+        alias fd=fdfind
+    fi
 fi
 
 # colored GCC warnings and errors
@@ -25,7 +27,11 @@ fi
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # alias for bat
-alias bat='batcat --theme=TokyoNight-storm'
+if ! command -v bat >/dev/null 2>&1; then
+    if command -v batcat >/dev/null 2>&1; then
+        alias bat=batcat
+    fi
+fi
 
 # My custom tmux stuff
 alias tp=$HOME/bin/tmux-projectizer
