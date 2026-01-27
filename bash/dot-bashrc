@@ -97,33 +97,19 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# nvm config
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
 # Add $HOME/bin to path
 export PATH="$HOME/bin:$PATH"
 
 # Add $HOME/.local/bin to path
 export PATH="$PATH:$HOME/.local/bin"
 
-# Add Neovim to path
-export PATH="$HOME/personal/nvim-linux64/bin:$PATH"
-
 # Add dotnet tools to path
 export PATH="$HOME/.dotnet/tools:$PATH"
 
-# Add go to path
-export PATH="/usr/local/go/bin:$PATH"
+# Add local go/bin to path
 export PATH="$HOME/go/bin:$PATH"
 
 # Activate mise (if found)
 if command -v mise &> /dev/null; then
   eval "$(mise activate bash)"
-fi
-
-# Add rust env
-if [ -e $HOME/.cargo/env ]; then
-  . "$HOME/.cargo/env"
 fi
