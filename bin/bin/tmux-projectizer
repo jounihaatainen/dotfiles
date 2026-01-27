@@ -2,12 +2,15 @@
 
 if command -v fd &>/dev/null
 then
-    selected=$(fd -td -d1 . --search-path ~/personal --search-path ~/work | fzf-tmux -p -- --height 40%)
+    # selected=$(fd -td -d1 . --search-path ~/personal --search-path ~/work | fzf --tmux -p -- --height 40%)
+    selected=$(fd -td -d1 . --search-path ~/work | fzf --tmux --height 40%)
 elif command -v fdfind &>/dev/null
 then
-    selected=$(fdfind -td -d1 . --search-path ~/personal --search-path ~/work | fzf-tmux -p -- --height 40%)
+    # selected=$(fdfind -td -d1 . --search-path ~/personal --search-path ~/work | fzf --tmux -p -- --height 40%)
+    selected=$(fdfind -td -d1 . --search-path ~/work | fzf --tmux --height 40%)
 else
-    selected=$(find ~/personal ~/work -mindepth 1 -maxdepth 1 -type d | fzf-tmux -p -- --height 40% )
+    # selected=$(find ~/personal ~/work -mindepth 1 -maxdepth 1 -type d | fzf --tmux -p -- --height 40% )
+    selected=$(find ~/work -mindepth 1 -maxdepth 1 -type d | fzf --tmux --height 40% )
 fi
 
 if [[ -z $selected ]]; then
