@@ -304,6 +304,7 @@ vim.keymap.set('i', '<C-space>', '<C-x><C-o>', { desc = 'lsp/filetype autocomple
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'remove highlight after search on esc' })
 vim.keymap.set('n', '<C-j>', ':m .+1<CR>==', { desc = 'move current line down fixing indent' })
 vim.keymap.set('n', '<C-k>', ':m .-2<CR>==', { desc = 'move current line up fixing indent' })
+vim.keymap.set('n', '<leader><space>', ':ls<CR>:b ', { desc = 'switch buffer' })
 vim.keymap.set('n', '<leader>t', function() toggle_terminal('terminal', { height = vim.v.count }) end, { desc = 'toggle terminal in horizontal split' })
 vim.keymap.set('n', '<leader>e', '<cmd>25Lexplore<CR>', { desc = 'toggle explorer on the left side' })
 vim.keymap.set('n', '<leader>f', ':find ', { desc = 'find files' })
