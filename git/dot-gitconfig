@@ -44,5 +44,9 @@
 	se = !git rev-list --all | xargs git grep -F
 	clg = config --global -l
 	lld = log --pretty=\"%C(Yellow)%h %C(reset)%ad (%C(Green)%cr%C(reset)) %C(Cyan)%an: %C(auto)%d %C(reset)%s\" --date=short
+    wta = "!f() { set -e; if [ -z \"$1\" ]; then echo \"Usage: git wta <branch>\"; return 1; fi; branch=\"$1\"; repo_dir=\"$(basename \"$(git rev-parse --show-toplevel)\")\"; clean_branch=\"$(echo \"$branch\" | sed \"s/[^A-Za-z0-9._-]/-/g\")\"; path=\"../${repo_dir}.${clean_branch}\"; if [ -e \"$path\" ]; then echo \"Error: Directory '$path' already exists.\"; return 1; fi; if git worktree list --porcelain | grep -q \"^branch refs/heads/$branch$\"; then echo \"Error: Branch '$branch' is already checked out in another worktree.\"; return 1; fi; if git show-ref --verify --quiet \"refs/heads/$branch\"; then git worktree add \"$path\" \"$branch\"; else git worktree add -b \"$branch\" \"$path\"; fi; }; f"
+    wtr = "!f() { set -e; if [ -z \"$1\" ]; then echo \"Usage: git wtr <branch>\"; return 1; fi; branch=\"$1\"; wt_path=\"$(git worktree list --porcelain | awk \"/^worktree / {wt=\\$2} /^branch refs\\\\/heads\\\\/$branch$/ {print wt}\")\"; if [ -z \"$wt_path\" ]; then echo \"Error: No worktree found for branch '$branch'.\"; return 1; fi; main_path=\"$(git rev-parse --show-toplevel)\"; if [ \"$wt_path\" = \"$main_path\" ]; then echo \"Error: Cannot remove the main worktree.\"; return 1; fi; git worktree remove \"$wt_path\"; git worktree prune; echo \"Removed worktree for branch '$branch'.\"; }; f"
+    wtl = "!f() { git worktree list --porcelain | awk \"/^worktree / { wt=\\$2 } /^branch / { sub(\\\"refs/heads/\\\", \\\"\\\", \\$2); print \\$2 \\\" -> \\\" wt }\"; }; f"
+    trash = "!f() { if [ -n \"$(git status --porcelain)\" ]; then git add -A && git commit -qm 'trashing' && git reset -q --hard HEAD~1; else echo 'No changes to discard'; exit 1; fi; }; f"
 [init]
 	defaultBranch = main
