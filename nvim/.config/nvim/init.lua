@@ -7,8 +7,17 @@
 --
 vim.pack.add({
   { src = "https://github.com/blazkowolf/gruber-darker.nvim" },
+
+  -- Install roslyn language server (latest development build) and html-lsp:
+  -- ```bash
+  -- $ dotnet tool install -g roslyn-language-server --prerelease --source https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json
+  -- $ npm i -g vscode-langservers-extracted
+  -- ```
+  { src = "https://github.com/seblyng/roslyn.nvim" },
+
+  -- Needs tree-sitter cli installed
+  { src = "https://github.com/nvim-treesitter/nvim-treesitter" }, 
 })
-vim.cmd.colorscheme("gruber-darker")
 
 --
 -- Options
@@ -42,13 +51,45 @@ vim.o.wildoptions = fuzzy, pum
 vim.g.netrw_banner = 0
 vim.g.netrw_liststyle = 3
 
+vim.cmd.colorscheme("gruber-darker")
 require("gruber-darker").setup({
   italic = { string = false },
 })
 
--- highlight yanked text briefly on yank
+require("nvim-treesitter").install({ "c_sharp", "razor", "html" })
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { "cs", "razor", "cshtml" },
+  callback = function() vim.treesitter.start() end,
+})
+
+-- LSP config
+require("roslyn").setup({})
+vim.lsp.config("html", { filetypes = { "html", "razor", "cshtml" }, })
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+  callback = function(ev)
+    local opts = { buffer = ev.buf }
+    vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
+    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+    vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+    -- vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
+    vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+    -- vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opts)
+    -- vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opts)
+    -- vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, opts)
+    -- vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
+    -- vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
+    -- vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
+  end,
+})
+vim.diagnostic.config({ virtual_lines = { current_line = true, }, })
+
+-- highlight yanked/put text briefly on yank/put
 vim.api.nvim_create_autocmd('TextYankPost', {
-  callback = function() vim.highlight.on_yank() end
+  callback = function() vim.hl.hl_op({ higroup = "Visual", timeout=300 }) end
+})
+vim.api.nvim_create_autocmd('TextPutPost', {
+  callback = function() vim.hl.hl_op({ higroup = "Visual", timeout=300 }) end
 })
 
 local function open_in_quick_fix_list(title, cmd_output)
@@ -72,7 +113,9 @@ local function prompt_and_exec(prompt, func)
   f(cmd, raw_input)
 end
 
+--
 -- Keymaps -------------------------------------------------------------------
+--
 vim.keymap.set('i', 'kj', '<Esc>', { desc = 'escape insert mode with kj' })
 -- vim.keymap.set('i', '<C-space>', '<C-x><C-o>', { desc = 'lsp/filetype autocompletion (does not work in windows terminal)' })
 
@@ -84,8 +127,8 @@ vim.keymap.set('n', '<leader>f', ':find ', { desc = 'find files' })
 vim.keymap.set('n', '<leader>v', ':vimgrep //j ** | copen<S-Left><S-Left><S-Left><S-Left><Right>', { desc = 'vim grep' })
 vim.keymap.set('n', '<leader>V', ':vimgrep /<C-r><C-w>/j ** | copen<S-Left><S-Left><S-Left><Left><Left><Left>', { desc = 'vim grep word under cursor' })
 vim.keymap.set('n', '<leader>w', '<cmd>lua vim.diagnostic.open_float()<CR>')
--- vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
--- vim.keymap.set('n', '<leader>d', '<cmd>lua vim.diagnostic.setqflist()<CR>')
+vim.keymap.set('n', '<leader>e', '<cmd>lua vim.diagnostic.enable(not vim.diagnostic.is_enabled())<CR>')
+vim.keymap.set('n', '<leader>d', '<cmd>lua vim.diagnostic.setqflist()<CR>')
 vim.keymap.set('n', '<leader>j', '<cmd>cnext<CR>zz', { desc = "Forward quick fix list" })
 vim.keymap.set('n', '<leader>k', '<cmd>cprev<CR>zz', { desc = "Backward quick fix list" })
 vim.keymap.set('n', '<leader>q', function()
